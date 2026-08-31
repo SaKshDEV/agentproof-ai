@@ -2,7 +2,7 @@ import React from 'react'
 
 const Hero = () => {
     return (
-        <section className="relative overflow-hidden bg-slate-950 px-6 py-24">
+        <section className="relative overflow-hidden bg-slate-950 px-6 py-16 md:py-24">
             <div className=" absolute left-1/2 top-20 h-80 w-80 -translate-x-1/2 rounded-full bg-violet-600/20 blur-3xl"></div>
             <div className="mx-auto z-10 max-w-7xl">
                 <div className='mx-auto mb-6 w-fit rounded-full border border-violet-500/20 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-300'>
@@ -11,13 +11,13 @@ const Hero = () => {
                     
 
                 
-                <h1 className="mx-auto max-w-4xl text-center text-5xl font-bold leading-tight text-white md:text-6xl">
+                <h1 className="mx-auto max-w-4xl text-center text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl">
                     Test your AI agents before
-                    <span className="text-violet-400">your users do</span>
+                    <span className="text-violet-400"> your users do</span>
 
                 </h1>
                 <p className="mx-auto mt-6 mx-w-2xl text-center text-lg leading-8 text-slate-400">
-                    Evaluate accuracy, detect hallucination,measure latency and
+                    Evaluate accuracy, detect hallucination, measure latency and
                     catch failures before deploying your AI agents to production
 
                 </p>
