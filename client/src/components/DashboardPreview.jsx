@@ -28,7 +28,7 @@ const evaluationResult = [
 
 const DashboardPreview = () => {
     return (
-        <section className="bg-slate-950 px-6 pb-24">
+        <section className="bg-slate-950 px-6 pb-8">
             <div className="mx-auto max-w-6xl">
                 <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl shadow-black/40">
                     <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
