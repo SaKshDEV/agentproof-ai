@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import DashboardPreview from "../components/DashboardPreview";
 import Features from "../components/Features";
 import HowItWorks from "../components/HowItWorks";
+import VersionComparison from "../components/VersionComparison";
 
 
 
@@ -15,6 +16,7 @@ function LandingPage(){
             <DashboardPreview />
             <Features />
             <HowItWorks />
+            <VersionComparison />
         </div>
     )
 }
