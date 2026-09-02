@@ -17,6 +17,10 @@ const Navbar = () => {
                         Features
 
                     </a>
+                    <a href="#How-it-works"
+                        className='text-sm text-slate-400 transition hover:text-whiteF'>
+                        How it works
+                    </a>
                     <a
                         className="text-sm text-slate-400 transition hover:text-white"
                         href="#evalution">
@@ -55,6 +59,10 @@ const Navbar = () => {
                             className="text-sm text-slate-400 hover:text-white"
                         >
                             Features
+                        </a>
+                        <a href="#How-it-works"
+                            className='text-sm text-slate-400 transition hover:text-whiteF'>
+                            How it works
                         </a>
 
                         <a
