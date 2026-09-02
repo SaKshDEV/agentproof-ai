@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom';
 import React from 'react'
 
 const Navbar = () => {
@@ -17,13 +18,13 @@ const Navbar = () => {
                         Features
 
                     </a>
-                    <a href="#How-it-works"
-                        className='text-sm text-slate-400 transition hover:text-whiteF'>
+                    <a href="#how-it-works"
+                        className='text-sm text-slate-400 transition hover:text-white'>
                         How it works
                     </a>
                     <a
                         className="text-sm text-slate-400 transition hover:text-white"
-                        href="#evalution">
+                        href="#evaluations">
                         Evalution
                     </a>
                     <a
@@ -33,13 +34,17 @@ const Navbar = () => {
                     </a>
                 </div>
                 <div className="hidden items-center gap-3 md:flex">
-                    <button className="rounded-lg px-4 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white">
+                    <Link
+                        to="/login"
+                        className="rounded-lg px-4 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white">
                         Sign in
-                    </button>
+                    </Link>
 
-                    <button className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500">
+                    <Link
+                        to="/register"
+                        className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500">
                         Get Started
-                    </button>
+                    </Link>
 
                 </div>
                 <button
@@ -60,8 +65,8 @@ const Navbar = () => {
                         >
                             Features
                         </a>
-                        <a href="#How-it-works"
-                            className='text-sm text-slate-400 transition hover:text-whiteF'>
+                        <a href="#how-it-works"
+                            className='text-sm text-slate-400 transition hover:text-white'>
                             How it works
                         </a>
 
@@ -79,10 +84,11 @@ const Navbar = () => {
                             Pricing
                         </a>
 
-                        <button className="mt-2 rounded-lg bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500">
+                        <Link
+                            to="/register"
+                            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500">
                             Get Started
-                        </button>
-
+                        </Link>
                     </div>
 
                 </div>
