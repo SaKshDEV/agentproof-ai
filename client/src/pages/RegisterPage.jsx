@@ -1,19 +1,22 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import api from "../services/api";
 
 function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [success, setSuccess] = useState("")
+  const [loading, setLoading] = useState(false)
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
@@ -33,21 +36,48 @@ function RegisterPage() {
       return;
     }
 
-    console.log("Name:", name);
-    console.log("Email:", email);
+    try {
+      setLoading(true);
+      setError("");
+      setSuccess("");
 
-    console.log("Registration form valid");
+      const response = await api.post("/auth/register", {
+        name,
+        email,
+        password,
+      });
+
+      setSuccess(response.data.message);
+
+      setName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+
+    } catch (error) {
+
+      setError(
+        error.response?.data?.message ||
+        "Something went wrong"
+      );
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <div className="grid min-h-screen lg:grid-cols-2">
 
-        {/* LEFT SIDE */}
+
         <div className="flex items-center justify-center px-6 py-12">
           <div className="w-full max-w-md">
 
-            {/* Logo */}
+
             <Link
               to="/"
               className="mb-8 flex w-fit items-center gap-2"
@@ -62,7 +92,7 @@ function RegisterPage() {
               </span>
             </Link>
 
-            {/* Heading */}
+
             <h1 className="text-3xl font-bold tracking-tight">
               Create your account
             </h1>
@@ -71,20 +101,25 @@ function RegisterPage() {
               Start testing and improving your AI agents with AgentProof.
             </p>
 
-            {/* Error */}
+
             {error && (
               <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
                 {error}
               </div>
             )}
+            {success && (
+              <div className="mt-5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+                {success}
+              </div>
+            )}
 
-            {/* FORM */}
+
             <form
               onSubmit={handleSubmit}
               className="mt-7 space-y-5"
             >
 
-              {/* Name */}
+
               <div>
                 <label
                   htmlFor="name"
@@ -103,7 +138,7 @@ function RegisterPage() {
                 />
               </div>
 
-              {/* Email */}
+
               <div>
                 <label
                   htmlFor="email"
@@ -122,7 +157,7 @@ function RegisterPage() {
                 />
               </div>
 
-              {/* Password */}
+
               <div>
                 <label
                   htmlFor="password"
@@ -155,7 +190,7 @@ function RegisterPage() {
                 </div>
               </div>
 
-              {/* Confirm Password */}
+
               <div>
                 <label
                   htmlFor="confirmPassword"
@@ -190,12 +225,13 @@ function RegisterPage() {
                 </div>
               </div>
 
-              {/* Submit */}
+
               <button
                 type="submit"
+                disabled={loading}
                 className="w-full rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-500"
               >
-                Create account
+               {loading ? "Creating account..." : "Create account"}
               </button>
 
             </form>
@@ -213,7 +249,6 @@ function RegisterPage() {
           </div>
         </div>
 
-        {/* RIGHT SIDE */}
         <div className="relative hidden overflow-hidden border-l border-white/10 bg-slate-900 lg:flex">
 
           <div className="absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-600/20 blur-3xl" />
