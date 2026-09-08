@@ -30,7 +30,7 @@ const Navbar = () => {
                     <a
                         className="text-sm text-slate-400 transition hover:text-white "
                         href="#pricing">
-                        pricing
+                        Pricing
                     </a>
                 </div>
                 <div className="hidden items-center gap-3 md:flex">
