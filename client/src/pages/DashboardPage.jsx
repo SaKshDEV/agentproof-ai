@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 import {
   LayoutDashboard,
@@ -14,14 +15,49 @@ import {
   TriangleAlert,
 } from "lucide-react";
 
+import api from "../services/api"
+
+
 function DashboardPage() {
   const navigate = useNavigate();
+
+  const [agents, setAgents] = useState([])
+  const [agentsLoading, setAgentsLoading] = useState(true)
+  const [agentsError, setAgentsError] = useState("");
 
   const storedUser = localStorage.getItem("user");
 
   const user = storedUser
     ? JSON.parse(storedUser)
     : null;
+
+  const fetchAgents = async () => {
+    try {
+      setAgentsLoading(true);
+      setAgentsError("");
+
+      const token = localStorage.getItem("token")
+
+      const response = await api.get("/agents", {
+        headers: {
+          Authorization: ` Bearer ${token}`,
+        },
+      });
+      setAgents(response.data.agents);
+    } catch (error) {
+
+      setAgentsError(
+        error.response?.data?.message ||
+        "Failed to load agents"
+      );
+    } finally {
+      setAgentsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAgents();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -35,10 +71,10 @@ function DashboardPage() {
 
       <div className="flex min-h-screen">
 
-     
+
         <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-slate-950 lg:flex lg:flex-col">
 
-     
+
           <div className="flex h-20 items-center border-b border-white/10 px-6">
 
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600">
@@ -53,7 +89,7 @@ function DashboardPage() {
           </div>
 
 
-         
+
           <nav className="flex-1 space-y-2 px-4 py-6">
 
             <SidebarItem
@@ -113,10 +149,10 @@ function DashboardPage() {
         </aside>
 
 
-        
+
         <main className="min-w-0 flex-1">
 
-        
+
           <header className="flex h-20 items-center justify-between border-b border-white/10 px-6 lg:px-8">
 
             <div>
@@ -138,10 +174,10 @@ function DashboardPage() {
           </header>
 
 
-         
+
           <div className="p-6 lg:p-8">
 
-           
+
             <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
 
               <div>
@@ -159,16 +195,25 @@ function DashboardPage() {
               </div>
 
             </div>
+            {agentsError && (
+              <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                {agentsError}
+              </div>
+            )}
 
 
-            {/* STATS */}
+
             <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
               <StatCard
                 icon={Bot}
                 label="Active Agents"
-                value="3"
-                detail="2 production"
+                value={agentsLoading ? "..." : agents.length}
+                detail={
+                  agents.length === 1
+                    ? "1 connected agent"
+                    : `${agents.length} connected agents`
+                }
               />
 
               <StatCard
@@ -197,7 +242,7 @@ function DashboardPage() {
 
             <div className="mt-6 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
 
-             
+
               <section className="rounded-2xl border border-white/10 bg-white/[0.03]">
 
                 <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
@@ -244,7 +289,7 @@ function DashboardPage() {
               </section>
 
 
-              
+
               <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
 
                 <p className="text-sm font-medium text-violet-400">
@@ -282,11 +327,10 @@ function DashboardPage() {
 function SidebarItem({ icon: Icon, label, active }) {
   return (
     <button
-      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
-        active
+      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${active
           ? "bg-violet-500/10 text-violet-300"
           : "text-slate-400 hover:bg-white/5 hover:text-white"
-      }`}
+        }`}
     >
       <Icon size={18} />
 
@@ -349,11 +393,10 @@ function EvaluationRow({
       </p>
 
       <span
-        className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ${
-          status === "Passed"
+        className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ${status === "Passed"
             ? "bg-emerald-500/10 text-emerald-400"
             : "bg-amber-500/10 text-amber-400"
-        }`}
+          }`}
       >
         {status}
       </span>
