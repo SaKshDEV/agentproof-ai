@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Clock3,
   TriangleAlert,
+  X,
 } from "lucide-react";
 
 import api from "../services/api"
@@ -24,6 +25,16 @@ function DashboardPage() {
   const [agents, setAgents] = useState([])
   const [agentsLoading, setAgentsLoading] = useState(true)
   const [agentsError, setAgentsError] = useState("");
+
+  const [showAddAgent, setShowAddAgent] = useState(false);
+
+  const [agentName, setAgentName] = useState("");
+  const [agentDescription, setAgentDescription] = useState("");
+  const [endpointUrl, setEndpointUrl] = useState("");
+  const [method, setMethod] = useState("POST");
+
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState("")
 
   const storedUser = localStorage.getItem("user");
 
@@ -40,7 +51,7 @@ function DashboardPage() {
 
       const response = await api.get("/agents", {
         headers: {
-          Authorization: ` Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       setAgents(response.data.agents);
@@ -58,6 +69,58 @@ function DashboardPage() {
   useEffect(() => {
     fetchAgents();
   }, []);
+
+  const createAgent = async (e) => {
+    e.preventDefault();
+
+    if (!agentName || !endpointUrl) {
+      setCreateError(
+        "Agent name and endpoint URL are required."
+      );
+      return;
+
+    }
+    try {
+      setCreateLoading(true)
+      setCreateError("")
+      const token = localStorage.getItem("token");
+      const response = await api.post(
+        "/agents",
+        {
+          name: agentName,
+          description: agentDescription,
+          endpointUrl,
+          method,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setAgents((currentAgents) => [
+        response.data.agent,
+        ...currentAgents
+      ]);
+      setAgentName("")
+      setAgentDescription("")
+      setEndpointUrl("")
+      setMethod("POST");
+
+      setShowAddAgent(false);
+
+    } catch (error) {
+      setCreateError(
+        error.response?.data?.message ||
+        "Failed to create agent"
+      );
+    } finally {
+      setCreateLoading(false)
+    }
+  };
+
+
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -304,7 +367,9 @@ function DashboardPage() {
                   Connect an AI agent, create a test dataset and measure its reliability.
                 </p>
 
-                <button className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-3 text-sm font-semibold text-violet-300 transition hover:bg-violet-500/15">
+                <button
+                  onClick={() => setShowAddAgent(true)}
+                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-3 text-sm font-semibold text-violet-300 transition hover:bg-violet-500/15">
                   <Plus size={17} />
 
                   Add your first agent
@@ -320,6 +385,139 @@ function DashboardPage() {
 
       </div>
 
+      {showAddAgent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+
+          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
+
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
+
+              <div>
+                <h2 className="text-lg font-semibold text-white">
+                  Add AI agent
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Connect an AI endpoint to AgentProof.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowAddAgent(false)}
+                className="rounded-lg p-2 text-slate-500 transition hover:bg-white/5 hover:text-white"
+              >
+                <X size={19} />
+              </button>
+
+            </div>
+
+
+            <form
+              onSubmit={createAgent}
+              className="space-y-5 p-6"
+            >
+
+              {createError && (
+                <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  {createError}
+                </div>
+              )}
+
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Agent name
+                </label>
+
+                <input
+                  type="text"
+                  value={agentName}
+                  onChange={(e) => setAgentName(e.target.value)}
+                  placeholder="Customer Support Agent"
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-violet-500/60"
+                />
+              </div>
+
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Description
+                </label>
+
+                <textarea
+                  value={agentDescription}
+                  onChange={(e) =>
+                    setAgentDescription(e.target.value)
+                  }
+                  placeholder="Handles customer support questions..."
+                  rows="3"
+                  className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-violet-500/60"
+                />
+              </div>
+
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Endpoint URL
+                </label>
+
+                <input
+                  type="url"
+                  value={endpointUrl}
+                  onChange={(e) => setEndpointUrl(e.target.value)}
+                  placeholder="https://api.example.com/chat"
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-violet-500/60"
+                />
+              </div>
+
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  HTTP method
+                </label>
+
+                <select
+                  value={method}
+                  onChange={(e) => setMethod(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none"
+                >
+                  <option value="POST">POST</option>
+                  <option value="GET">GET</option>
+                </select>
+              </div>
+
+
+              <div className="flex gap-3 pt-2">
+
+                <button
+                  type="button"
+                  onClick={() => setShowAddAgent(false)}
+                  className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/5"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={createLoading}
+                  className="flex-1 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {createLoading
+                    ? "Adding agent..."
+                    : "Add agent"}
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+
+        </div>
+      )}
+
+
     </div>
   );
 }
@@ -328,8 +526,8 @@ function SidebarItem({ icon: Icon, label, active }) {
   return (
     <button
       className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${active
-          ? "bg-violet-500/10 text-violet-300"
-          : "text-slate-400 hover:bg-white/5 hover:text-white"
+        ? "bg-violet-500/10 text-violet-300"
+        : "text-slate-400 hover:bg-white/5 hover:text-white"
         }`}
     >
       <Icon size={18} />
@@ -394,14 +592,15 @@ function EvaluationRow({
 
       <span
         className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ${status === "Passed"
-            ? "bg-emerald-500/10 text-emerald-400"
-            : "bg-amber-500/10 text-amber-400"
+          ? "bg-emerald-500/10 text-emerald-400"
+          : "bg-amber-500/10 text-amber-400"
           }`}
       >
         {status}
       </span>
 
     </div>
+
   );
 }
 
