@@ -164,6 +164,7 @@ function DashboardPage() {
             <SidebarItem
               icon={Bot}
               label="Agents"
+              onClick={() => navigate("/agents")}
             />
 
             <SidebarItem
@@ -522,9 +523,14 @@ function DashboardPage() {
   );
 }
 
-function SidebarItem({ icon: Icon, label, active }) {
+function SidebarItem({ 
+  icon: Icon,
+  label,
+  active,
+  onClick }) {
   return (
     <button
+    onClick={onClick}
       className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${active
         ? "bg-violet-500/10 text-violet-300"
         : "text-slate-400 hover:bg-white/5 hover:text-white"
