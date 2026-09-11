@@ -57,3 +57,30 @@ export const getAgents = async (req, res) => {
     });
   }
 };
+
+export const deleteAgent = async (req,res) => {
+  try{
+    const agent = await Agent.findOne({
+      _id: req.params.id,
+      user: req.user._id
+    });
+
+    if (!agent) {
+      return res.status(404).json({
+        message: "Agent not found "
+      })
+    }
+
+    await agent.deleteOne();
+
+    return res.status(200).json({
+      message: "Agent deleted successfully"
+    })
+  }catch(error){
+    console.error("Delete agent error:", error.message);
+    
+    return res.status(500).json({
+      message: "Server error"
+    });
+  }
+};
