@@ -84,3 +84,51 @@ export const deleteAgent = async (req,res) => {
     });
   }
 };
+
+export const updateAgent = async (req,res)=>{
+  try{
+    const {
+      name,
+      description,
+      endpointUrl,
+      method
+    } = req.body;
+    const agent = await Agent.findOne({
+    _id: req.params.id,
+    user: req.user._id,
+    });
+    
+    if(!agent){
+      return res.status(404).json({
+        message:"Agent not found"
+      });
+    }
+    if(name !== undefined){
+      agent.name = name;
+    }
+    if(description !== undefined){
+      agent.description = description;
+    }
+    if(endpointUrl !== undefined){
+      agent.endpointUrl= endpointUrl;
+    }
+    if(method !== undefined){
+      agent.method = method;
+    }
+    await agent.save();
+    
+    return res.status(200).json({
+      message:" Agent updated successfully",
+      agent,
+    });
+
+  }catch(error){
+    console.error(
+      "Update agent error:",
+      error.message
+    )
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
+}

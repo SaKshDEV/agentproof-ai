@@ -7,7 +7,8 @@ import {
   Plus,
   Globe2,
   X,
-  Trash2
+  Trash2,
+  Pencil,
 } from "lucide-react";
 
 import api from "../services/api";
@@ -30,6 +31,17 @@ function AgentsPage() {
   const [createError, setCreateError] = useState("");
 
   const [deletingId, setDeletingId] = useState(null);
+
+  const [editingAgent, setEditingAgent] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("")
+  const [editEndpointUrl, setEditEndpointUrl] = useState("");
+  const [editMethod, setEditMethod] = useState("POST");
+
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError] = useState("")
+
+
 
 
   const fetchAgents = async () => {
@@ -148,6 +160,72 @@ function AgentsPage() {
       setDeletingId(null);
     }
   };
+
+  const openEditModal = (agent) => {
+    setEditingAgent(agent);
+
+    setEditName(agent.name);
+    setEditDescription(agent.description || "");
+    setEditEndpointUrl(agent.endpointUrl);
+    setEditMethod(agent.method);
+
+    setEditError("");
+  };
+
+  const updateAgent = async (e) => {
+    e.preventDefault();
+
+    if (!editName || !editEndpointUrl) {
+      setEditError(
+        "Agent name and endpoint URL are required."
+      );
+      return;
+    }
+
+    try {
+      setEditLoading(true);
+      setEditError("");
+
+      const token = localStorage.getItem("token");
+
+      const response = await api.put(
+        `/agents/${editingAgent._id}`,
+        {
+          name: editName,
+          description: editDescription,
+          endpointUrl: editEndpointUrl,
+          method: editMethod,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setAgents((currentAgents) =>
+        currentAgents.map((agent) =>
+          agent._id === editingAgent._id
+            ? response.data.agent
+            : agent
+        )
+      );
+
+      setEditingAgent(null);
+
+    } catch (error) {
+      setEditError(
+        error.response?.data?.message ||
+        "Failed to update agent"
+      );
+
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+
+
 
 
   useEffect(() => {
@@ -274,9 +352,11 @@ function AgentsPage() {
                   <div className="mt-5 flex gap-3">
 
                     <button
-                      className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/5"
+                      onClick={() => openEditModal(agent)}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/5"
                     >
-                      View
+                      <Pencil size={15} />
+                      Edit
                     </button>
 
                     <button
@@ -445,6 +525,132 @@ function AgentsPage() {
 
         </div>
       )}
+      {editingAgent && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+
+    <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
+
+      <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
+
+        <div>
+          <h2 className="text-lg font-semibold">
+            Edit agent
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Update your AI agent configuration.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setEditingAgent(null)}
+          className="rounded-lg p-2 text-slate-500 transition hover:bg-white/5 hover:text-white"
+        >
+          <X size={19} />
+        </button>
+
+      </div>
+
+      <form
+        onSubmit={updateAgent}
+        className="space-y-5 p-6"
+      >
+
+        {editError && (
+          <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            {editError}
+          </div>
+        )}
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-slate-300">
+            Agent name
+          </label>
+
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none focus:border-violet-500/60"
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-slate-300">
+            Description
+          </label>
+
+          <textarea
+            value={editDescription}
+            onChange={(e) =>
+              setEditDescription(e.target.value)
+            }
+            rows="3"
+            className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none focus:border-violet-500/60"
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-slate-300">
+            Endpoint URL
+          </label>
+
+          <input
+            type="url"
+            value={editEndpointUrl}
+            onChange={(e) =>
+              setEditEndpointUrl(e.target.value)
+            }
+            className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none focus:border-violet-500/60"
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-slate-300">
+            HTTP method
+          </label>
+
+          <select
+            value={editMethod}
+            onChange={(e) =>
+              setEditMethod(e.target.value)
+            }
+            className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none"
+          >
+            <option value="POST">POST</option>
+            <option value="GET">GET</option>
+          </select>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+
+          <button
+            type="button"
+            onClick={() => setEditingAgent(null)}
+            className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/5"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            disabled={editLoading}
+            className="flex-1 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {editLoading
+              ? "Saving..."
+              : "Save changes"}
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+)}
 
 
     </div>
