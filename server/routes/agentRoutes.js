@@ -4,7 +4,8 @@ import {
   createAgent,
   getAgents,
   deleteAgent,
-  updateAgent
+  updateAgent,
+  testAgent,
 } from "../controllers/agentController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -18,5 +19,7 @@ router.get("/", protect, getAgents);
 router.delete("/:id", protect, deleteAgent);
 
 router.put("/:id", protect, updateAgent);
+
+router.post("/:id/test", protect, testAgent);
 
 export default router;

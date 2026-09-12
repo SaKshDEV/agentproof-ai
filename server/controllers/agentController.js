@@ -132,3 +132,88 @@ export const updateAgent = async (req,res)=>{
     });
   }
 }
+
+export const testAgent = async (req, res) => {
+  try {
+    const { input } = req.body;
+
+    if (!input) {
+      return res.status(400).json({
+        message: "Test input is required",
+      });
+    }
+
+    const agent = await Agent.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
+    if (!agent) {
+      return res.status(404).json({
+        message: "Agent not found",
+      });
+    }
+
+    const startTime = Date.now();
+
+    let agentResponse;
+
+    if (agent.method === "POST") {
+      const response = await fetch(agent.endpointUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          input,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Agent returned status ${response.status}`
+        );
+      }
+
+      agentResponse = await response.json();
+
+    } else {
+      const url = new URL(agent.endpointUrl);
+
+      url.searchParams.set("input", input);
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(
+          `Agent returned status ${response.status}`
+        );
+      }
+
+      agentResponse = await response.json();
+    }
+
+    const endTime = Date.now();
+
+    const latency = endTime - startTime;
+
+    return res.status(200).json({
+      success: true,
+      input,
+      response: agentResponse,
+      latency,
+    });
+
+  } catch (error) {
+    console.error(
+      "Test agent error:",
+      error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Agent test failed",
+      error: error.message,
+    });
+  }
+};

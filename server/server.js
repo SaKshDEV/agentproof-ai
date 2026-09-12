@@ -4,6 +4,7 @@ import cors from "cors"
 import ConnectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import agentRoutes from "./routes/agentRoutes.js";
+import mockAgentRoutes from "./routes/mockAgentRoutes.js";
 
 dotenv.config();
 ConnectDB();
@@ -19,6 +20,7 @@ app.get("/", (req,res)=>{
     res.send("Agentproof api is running");
 
 });
+app.use("/api/mock-agent", mockAgentRoutes);
  const PORT= process.env.PORT || 5000;
  
  app.listen(PORT, ()=>{
