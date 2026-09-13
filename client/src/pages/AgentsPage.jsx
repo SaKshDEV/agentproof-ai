@@ -9,6 +9,8 @@ import {
   X,
   Trash2,
   Pencil,
+  Play,
+  Clock3
 } from "lucide-react";
 
 import api from "../services/api";
@@ -40,6 +42,13 @@ function AgentsPage() {
 
   const [editLoading, setEditLoading] = useState(false)
   const [editError, setEditError] = useState("")
+
+  const [testingAgent, setTestingAgent] = useState(null);
+
+  const [testInput, setTestInput] = useState("");
+  const [testLoading, setTestLoading] = useState(false);
+  const [testError, setTestError] = useState("")
+  const [testResult, setTestResult] = useState(null)
 
 
 
@@ -224,6 +233,55 @@ function AgentsPage() {
     }
   };
 
+  const openTestModal = (agent) => {
+  setTestingAgent(agent);
+
+  setTestInput("");
+  setTestError("");
+  setTestResult(null);
+};
+
+  const runAgentTest = async (e) => {
+    e.preventDefault();
+
+    if (!testInput.trim()) {
+      setTestError("Test input is required.");
+      return;
+    }
+
+    try {
+      setTestLoading(true);
+      setTestError("");
+      setTestResult(null);
+
+      const token = localStorage.getItem("token");
+
+      const response = await api.post(
+        `/agents/${testingAgent._id}/test`,
+        {
+          input: testInput,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setTestResult(response.data);
+
+    } catch (error) {
+      setTestError(
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "Agent test failed"
+      );
+
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
 
 
 
@@ -349,7 +407,17 @@ function AgentsPage() {
                     {agent.method}
                   </span>
 
+                  <button
+                    onClick={() => openTestModal(agent)}
+                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-violet-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-500"
+                  >
+                    <Play size={15} />
+                    Test agent
+                  </button>
+
                   <div className="mt-5 flex gap-3">
+
+
 
                     <button
                       onClick={() => openEditModal(agent)}
@@ -526,25 +594,151 @@ function AgentsPage() {
         </div>
       )}
       {editingAgent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+
+          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
+
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
+
+              <div>
+                <h2 className="text-lg font-semibold">
+                  Edit agent
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Update your AI agent configuration.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setEditingAgent(null)}
+                className="rounded-lg p-2 text-slate-500 transition hover:bg-white/5 hover:text-white"
+              >
+                <X size={19} />
+              </button>
+
+            </div>
+
+            <form
+              onSubmit={updateAgent}
+              className="space-y-5 p-6"
+            >
+
+              {editError && (
+                <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  {editError}
+                </div>
+              )}
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Agent name
+                </label>
+
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none focus:border-violet-500/60"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Description
+                </label>
+
+                <textarea
+                  value={editDescription}
+                  onChange={(e) =>
+                    setEditDescription(e.target.value)
+                  }
+                  rows="3"
+                  className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none focus:border-violet-500/60"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Endpoint URL
+                </label>
+
+                <input
+                  type="url"
+                  value={editEndpointUrl}
+                  onChange={(e) =>
+                    setEditEndpointUrl(e.target.value)
+                  }
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none focus:border-violet-500/60"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  HTTP method
+                </label>
+
+                <select
+                  value={editMethod}
+                  onChange={(e) =>
+                    setEditMethod(e.target.value)
+                  }
+                  className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none"
+                >
+                  <option value="POST">POST</option>
+                  <option value="GET">GET</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+
+                <button
+                  type="button"
+                  onClick={() => setEditingAgent(null)}
+                  className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/5"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="flex-1 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {editLoading
+                    ? "Saving..."
+                    : "Save changes"}
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+
+        </div>
+      )}
+{testingAgent && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
 
-    <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
+    <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
 
       <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
 
         <div>
-          <h2 className="text-lg font-semibold">
-            Edit agent
-          </h2>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Update your AI agent configuration.
+          <p className="text-sm font-medium text-violet-400">
+            Test agent
           </p>
+
+          <h2 className="mt-1 text-lg font-semibold">
+            {testingAgent.name}
+          </h2>
         </div>
 
         <button
           type="button"
-          onClick={() => setEditingAgent(null)}
+          onClick={() => setTestingAgent(null)}
           className="rounded-lg p-2 text-slate-500 transition hover:bg-white/5 hover:text-white"
         >
           <X size={19} />
@@ -552,106 +746,92 @@ function AgentsPage() {
 
       </div>
 
+
       <form
-        onSubmit={updateAgent}
-        className="space-y-5 p-6"
+        onSubmit={runAgentTest}
+        className="p-6"
       >
 
-        {editError && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            {editError}
+        <label className="mb-2 block text-sm font-medium text-slate-300">
+          Test input
+        </label>
+
+        <textarea
+          value={testInput}
+          onChange={(e) => setTestInput(e.target.value)}
+          placeholder="Ask your agent something..."
+          rows="4"
+          className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-violet-500/60"
+        />
+
+        {testError && (
+          <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            {testError}
           </div>
         )}
 
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-300">
-            Agent name
-          </label>
+        <button
+          type="submit"
+          disabled={testLoading}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Play size={16} />
 
-          <input
-            type="text"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none focus:border-violet-500/60"
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-300">
-            Description
-          </label>
-
-          <textarea
-            value={editDescription}
-            onChange={(e) =>
-              setEditDescription(e.target.value)
-            }
-            rows="3"
-            className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none focus:border-violet-500/60"
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-300">
-            Endpoint URL
-          </label>
-
-          <input
-            type="url"
-            value={editEndpointUrl}
-            onChange={(e) =>
-              setEditEndpointUrl(e.target.value)
-            }
-            className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none focus:border-violet-500/60"
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-300">
-            HTTP method
-          </label>
-
-          <select
-            value={editMethod}
-            onChange={(e) =>
-              setEditMethod(e.target.value)
-            }
-            className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none"
-          >
-            <option value="POST">POST</option>
-            <option value="GET">GET</option>
-          </select>
-        </div>
-
-        <div className="flex gap-3 pt-2">
-
-          <button
-            type="button"
-            onClick={() => setEditingAgent(null)}
-            className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/5"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="submit"
-            disabled={editLoading}
-            className="flex-1 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {editLoading
-              ? "Saving..."
-              : "Save changes"}
-          </button>
-
-        </div>
+          {testLoading
+            ? "Running test..."
+            : "Run test"}
+        </button>
 
       </form>
+
+
+      {testResult && (
+        <div className="border-t border-white/10 p-6">
+
+          <div className="flex items-center justify-between">
+
+            <div>
+              <p className="text-sm text-slate-500">
+                Result
+              </p>
+
+              <p className="mt-1 text-sm font-medium text-emerald-400">
+                Test completed successfully
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm text-slate-300">
+              <Clock3 size={15} />
+
+              {testResult.latency} ms
+            </div>
+
+          </div>
+
+
+          <div className="mt-5 rounded-xl border border-white/10 bg-slate-950 p-4">
+
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Agent response
+            </p>
+
+            <pre className="overflow-x-auto whitespace-pre-wrap break-words text-sm leading-6 text-slate-300">
+              {JSON.stringify(
+                testResult.response,
+                null,
+                2
+              )}
+            </pre>
+
+          </div>
+
+        </div>
+      )}
 
     </div>
 
   </div>
 )}
-
 
     </div>
   );
