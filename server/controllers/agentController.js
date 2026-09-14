@@ -198,11 +198,21 @@ export const testAgent = async (req, res) => {
 
     const latency = endTime - startTime;
 
+    const evaluationRun = await EvaluationRun.create({
+      user: req.user._id,
+      agent: agent._id,
+      input,
+      output: agentResponse,
+      latency,
+      success: true,
+    });
+
     return res.status(200).json({
       success: true,
       input,
       response: agentResponse,
       latency,
+      evaluationId: evaluationRun._id,
     });
 
   } catch (error) {
