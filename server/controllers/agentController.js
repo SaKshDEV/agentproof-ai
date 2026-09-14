@@ -1,4 +1,5 @@
 import Agent from "../models/Agent.js";
+import EvaluationRun from "../models/EvaluationRun.js";
 
 export const createAgent = async (req, res) => {
   try {
@@ -58,8 +59,8 @@ export const getAgents = async (req, res) => {
   }
 };
 
-export const deleteAgent = async (req,res) => {
-  try{
+export const deleteAgent = async (req, res) => {
+  try {
     const agent = await Agent.findOne({
       _id: req.params.id,
       user: req.user._id
@@ -76,17 +77,17 @@ export const deleteAgent = async (req,res) => {
     return res.status(200).json({
       message: "Agent deleted successfully"
     })
-  }catch(error){
+  } catch (error) {
     console.error("Delete agent error:", error.message);
-    
+
     return res.status(500).json({
       message: "Server error"
     });
   }
 };
 
-export const updateAgent = async (req,res)=>{
-  try{
+export const updateAgent = async (req, res) => {
+  try {
     const {
       name,
       description,
@@ -94,35 +95,35 @@ export const updateAgent = async (req,res)=>{
       method
     } = req.body;
     const agent = await Agent.findOne({
-    _id: req.params.id,
-    user: req.user._id,
+      _id: req.params.id,
+      user: req.user._id,
     });
-    
-    if(!agent){
+
+    if (!agent) {
       return res.status(404).json({
-        message:"Agent not found"
+        message: "Agent not found"
       });
     }
-    if(name !== undefined){
+    if (name !== undefined) {
       agent.name = name;
     }
-    if(description !== undefined){
+    if (description !== undefined) {
       agent.description = description;
     }
-    if(endpointUrl !== undefined){
-      agent.endpointUrl= endpointUrl;
+    if (endpointUrl !== undefined) {
+      agent.endpointUrl = endpointUrl;
     }
-    if(method !== undefined){
+    if (method !== undefined) {
       agent.method = method;
     }
     await agent.save();
-    
+
     return res.status(200).json({
-      message:" Agent updated successfully",
+      message: " Agent updated successfully",
       agent,
     });
 
-  }catch(error){
+  } catch (error) {
     console.error(
       "Update agent error:",
       error.message
@@ -209,6 +210,15 @@ export const testAgent = async (req, res) => {
       "Test agent error:",
       error.message
     );
+
+    const evaluationRun = await EvaluationRun.create({
+      user: req.user._id,
+      agent: agent._id,
+      input,
+      output: agentResponse,
+      latency,
+      success: true,
+    });
 
     return res.status(500).json({
       success: false,
