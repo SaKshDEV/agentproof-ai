@@ -26,6 +26,10 @@ function DashboardPage() {
   const [agentsLoading, setAgentsLoading] = useState(true)
   const [agentsError, setAgentsError] = useState("");
 
+  const [evaluations, setEvaluations] = useState([])
+  const [evaluationsLoading, setEvaluationsLoading] = useState(true)
+  const [evaluationsError, setEvaluationsError] = useState("")
+
   const [showAddAgent, setShowAddAgent] = useState(false);
 
   const [agentName, setAgentName] = useState("");
@@ -66,9 +70,60 @@ function DashboardPage() {
     }
   }
 
+  const fetchEvaluations = async () => {
+    try {
+      setEvaluationsLoading(true)
+      setEvaluationsError("");
+
+      const token = localStorage.getItem("token");
+
+      const response = await api.get("/evaluations", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setEvaluations(response.data.evaluations);
+    } catch (error) {
+      setEvaluationsError(
+        error.response?.data?.message ||
+        "Failed to load evaluations"
+      );
+
+    } finally {
+      setEvaluationsLoading(false);
+    }
+
+  }
+
   useEffect(() => {
     fetchAgents();
+    fetchEvaluations();
   }, []);
+
+  const successfulRuns = evaluations.filter(
+    (evaluation) => evaluation.success
+  ).length
+
+  const failedRuns = evaluations.filter(
+    (evaluation) => !evaluation.success
+  ).length
+
+  const successRate =
+    evaluations.length > 0
+      ? Math.round(
+        (successfulRuns / evaluations.length) * 100
+      )
+      : 0;
+  const averageLatency =
+    evaluations.length > 0
+      ? Math.round(
+        evaluations.reduce(
+          (total, evaluation) =>
+            total + evaluation.latency,
+          0
+        ) / evaluations.length
+      )
+      : 0;
 
   const createAgent = async (e) => {
     e.preventDefault();
@@ -265,6 +320,11 @@ function DashboardPage() {
                 {agentsError}
               </div>
             )}
+            {evaluationsError && (
+              <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                {evaluationsError}
+              </div>
+            )}
 
 
 
@@ -283,23 +343,51 @@ function DashboardPage() {
 
               <StatCard
                 icon={Activity}
-                label="Reliability"
-                value="94.2%"
-                detail="+3.8% this week"
+                label="Run Success Rate"
+                value={
+                  evaluationsLoading
+                    ? "..."
+                    : `${successRate}%`
+                }
+                detail={
+                  evaluationsLoading
+                    ? "Loading evaluation data"
+                    : evaluations.length === 0
+                      ? "No evaluations yet"
+                      : `${successfulRuns} of ${evaluations.length} runs succeeded`
+                }
               />
 
               <StatCard
                 icon={Clock3}
                 label="Avg. Latency"
-                value="1.42s"
-                detail="-18% this week"
+                value={
+                  evaluationsLoading
+                    ? "..."
+                    : `${averageLatency} ms`
+                }
+                detail={
+                  evaluations.length === 0
+                    ? "No evaluation data"
+                    : `Across ${evaluations.length} runs`
+                }
               />
 
               <StatCard
                 icon={TriangleAlert}
                 label="Failed Tests"
-                value="7"
-                detail="3 need review"
+                value={
+                  evaluationsLoading
+                    ? "..."
+                    : failedRuns
+                }
+                detail={
+                  evaluations.length === 0
+                    ? "No evaluations yet"
+                    : failedRuns === 1
+                      ? "1 failed run"
+                      : `${failedRuns} failed runs`
+                }
               />
 
             </div>
@@ -524,14 +612,14 @@ function DashboardPage() {
   );
 }
 
-function SidebarItem({ 
+function SidebarItem({
   icon: Icon,
   label,
   active,
   onClick }) {
   return (
     <button
-    onClick={onClick}
+      onClick={onClick}
       className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${active
         ? "bg-violet-500/10 text-violet-300"
         : "text-slate-400 hover:bg-white/5 hover:text-white"
