@@ -135,16 +135,19 @@ export const updateAgent = async (req, res) => {
 }
 
 export const testAgent = async (req, res) => {
-  try {
-    const { input } = req.body;
+  const { input } = req.body;
 
+  let agent = null;
+  let startTime = null;
+
+  try {
     if (!input) {
       return res.status(400).json({
         message: "Test input is required",
       });
     }
 
-    const agent = await Agent.findOne({
+    agent = await Agent.findOne({
       _id: req.params.id,
       user: req.user._id,
     });
@@ -155,7 +158,7 @@ export const testAgent = async (req, res) => {
       });
     }
 
-    const startTime = Date.now();
+    startTime = Date.now();
 
     let agentResponse;
 
@@ -221,14 +224,28 @@ export const testAgent = async (req, res) => {
       error.message
     );
 
-    const evaluationRun = await EvaluationRun.create({
-      user: req.user._id,
-      agent: agent._id,
-      input,
-      output: agentResponse,
-      latency,
-      success: true,
-    });
+    const failureLatency = startTime
+      ? Date.now() - startTime
+      : 0;
+
+    if (agent) {
+      try {
+        await EvaluationRun.create({
+          user: req.user._id,
+          agent: agent._id,
+          input,
+          output: null,
+          latency: failureLatency,
+          success: false,
+          error: error.message,
+        });
+      } catch (saveError) {
+        console.error(
+          "Failed to save failed evaluation:",
+          saveError.message
+        );
+      }
+    }
 
     return res.status(500).json({
       success: false,
