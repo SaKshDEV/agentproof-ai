@@ -134,7 +134,7 @@ function EvaluationsPage() {
                 </div>
 
 
-                
+
                 {loading ? (
 
                     <div className="mt-10 text-sm text-slate-500">
@@ -178,7 +178,7 @@ function EvaluationsPage() {
                                 className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
                             >
 
-                                
+
                                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
 
                                     <div className="flex items-start gap-3">
@@ -241,19 +241,32 @@ function EvaluationsPage() {
 
                                 </div>
 
+                               
                                 <div className="mt-5">
 
                                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                                        Agent response
+                                        {evaluation.success
+                                            ? "Agent response"
+                                            : "Error"}
                                     </p>
 
-                                    <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words rounded-xl border border-white/5 bg-slate-950 p-4 text-sm leading-6 text-slate-300">
-                                        {JSON.stringify(
-                                            evaluation.output,
-                                            null,
-                                            2
-                                        )}
-                                    </pre>
+                                    {evaluation.success ? (
+
+                                        <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words rounded-xl border border-white/5 bg-slate-950 p-4 text-sm leading-6 text-slate-300">
+                                            {JSON.stringify(
+                                                evaluation.output,
+                                                null,
+                                                2
+                                            )}
+                                        </pre>
+
+                                    ) : (
+
+                                        <div className="mt-2 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+                                            {evaluation.error || "Agent test failed"}
+                                        </div>
+
+                                    )}
 
                                 </div>
 
