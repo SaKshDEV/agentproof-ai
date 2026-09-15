@@ -170,6 +170,7 @@ function DashboardPage() {
             <SidebarItem
               icon={FlaskConical}
               label="Evaluations"
+              onClick={() => navigate("/evaluations")}
             />
 
             <SidebarItem

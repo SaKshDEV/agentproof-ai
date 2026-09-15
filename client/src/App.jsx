@@ -5,6 +5,7 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProtectedRoute from "./components/ProtectedRoutes";
 import AgentsPage from "./pages/AgentsPage";
+import EvaluationsPage from "./pages/EvaluationsPage";
 
 function App() {
   return (
@@ -32,12 +33,20 @@ function App() {
           </ProtectedRoute>
         }
       />
-      
+
       <Route
         path="/agents"
         element={
           <ProtectedRoute>
             <AgentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/evaluations"
+        element={
+          <ProtectedRoute>
+            <EvaluationsPage />
           </ProtectedRoute>
         }
       />
