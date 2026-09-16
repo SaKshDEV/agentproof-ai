@@ -125,6 +125,13 @@ function DashboardPage() {
       )
       : 0;
 
+  const recentEvaluations = [...evaluations]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt) - new Date(a.createdAt)
+    )
+    .slice(0, 3)
+
   const createAgent = async (e) => {
     e.preventDefault();
 
@@ -410,33 +417,41 @@ function DashboardPage() {
                     </p>
                   </div>
 
-                  <button className="text-sm font-medium text-violet-400 hover:text-violet-300">
+                  <button
+                    onClick={() => navigate("/evaluations")}
+                    className="text-sm font-medium text-violet-400 hover:text-violet-300">
                     View all
                   </button>
 
                 </div>
 
                 <div>
-                  <EvaluationRow
-                    name="Customer Support Agent"
-                    score="96.8%"
-                    status="Passed"
-                    time="12 min ago"
-                  />
+                  {evaluationsLoading ? (
+                    <div className="px-6 py-8 text-sm text-slate-500">
+                      Loading evaluation...
+                    </div>
+                  ) : recentEvaluations.length === 0 ? (
+                    <div className="px-6 py-8 text-sm text-slate-500">
+                      No evaluations yet.
+                    </div>
+                  ) : (
+                    recentEvaluations.map((evaluation) => (
+                      <EvaluationRow
+                        key={evaluation._id}
+                        name={
+                          evaluation.agent?.name ||
+                          "Deleted agent"
+                        }
+                        latency={evaluation.latency}
+                        success={evaluation.success}
+                        time={new Date(
+                          evaluation.createdAt
+                        ).toLocaleString()}
+                      />
+                    ))
+                  )
+                  }
 
-                  <EvaluationRow
-                    name="Refund Assistant"
-                    score="91.4%"
-                    status="Passed"
-                    time="1 hour ago"
-                  />
-
-                  <EvaluationRow
-                    name="Account Recovery Agent"
-                    score="72.3%"
-                    status="Review"
-                    time="3 hours ago"
-                  />
                 </div>
 
               </section>
@@ -664,8 +679,8 @@ function StatCard({ icon: Icon, label, value, detail }) {
 
 function EvaluationRow({
   name,
-  score,
-  status,
+  latency,
+  success,
   time,
 }) {
   return (
@@ -681,17 +696,17 @@ function EvaluationRow({
         </p>
       </div>
 
-      <p className="text-sm font-semibold">
-        {score}
+      <p className="text-sm font-semibold text-slate-300">
+        {latency} ms
       </p>
 
       <span
-        className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ${status === "Passed"
+        className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ${success
           ? "bg-emerald-500/10 text-emerald-400"
           : "bg-amber-500/10 text-amber-400"
           }`}
       >
-        {status}
+        {success? "Passed":"Failed"}
       </span>
 
     </div>
