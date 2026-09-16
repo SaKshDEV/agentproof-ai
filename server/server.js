@@ -6,6 +6,7 @@ import authRoutes from "./routes/authRoutes.js";
 import agentRoutes from "./routes/agentRoutes.js";
 import mockAgentRoutes from "./routes/mockAgentRoutes.js";
 import evaluationRoutes from "./routes/evaluationRoutes.js";
+import datasetRoutes from "./routes/datasetRoutes.js";
 
 dotenv.config();
 ConnectDB();
@@ -23,6 +24,7 @@ app.get("/", (req,res)=>{
 });
 app.use("/api/mock-agent", mockAgentRoutes);
 app.use("/api/evaluations", evaluationRoutes);
+app.use("/api/datasets", datasetRoutes);
 
  const PORT= process.env.PORT || 5000;
  
