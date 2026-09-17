@@ -314,6 +314,7 @@ function DashboardPage() {
             <SidebarItem
               icon={Database}
               label="Datasets"
+              onClick={() => navigate("/datasets")}
             />
 
             <SidebarItem
@@ -369,8 +370,8 @@ function DashboardPage() {
             </div>
 
             <button
-            onClick={openNewEvaluation}
-            className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold transition hover:bg-violet-500">
+              onClick={openNewEvaluation}
+              className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold transition hover:bg-violet-500">
               <Plus size={17} />
 
               New evaluation
@@ -699,147 +700,147 @@ function DashboardPage() {
 
         </div>
       )}
-       {showNewEvaluation && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+      {showNewEvaluation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
 
-    <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
+          <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
 
-      <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
 
-        <div>
-          <p className="text-sm font-medium text-violet-400">
-            Agent evaluation
-          </p>
+              <div>
+                <p className="text-sm font-medium text-violet-400">
+                  Agent evaluation
+                </p>
 
-          <h2 className="mt-1 text-lg font-semibold text-white">
-            Run a new evaluation
-          </h2>
-        </div>
+                <h2 className="mt-1 text-lg font-semibold text-white">
+                  Run a new evaluation
+                </h2>
+              </div>
 
-        <button
-          type="button"
-          onClick={() => setShowNewEvaluation(false)}
-          className="rounded-lg p-2 text-slate-500 transition hover:bg-white/5 hover:text-white"
-        >
-          <X size={19} />
-        </button>
-
-      </div>
-
-
-      <form
-        onSubmit={runNewEvaluation}
-        className="space-y-5 p-6"
-      >
-
-        {evaluationRunError && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            {evaluationRunError}
-          </div>
-        )}
-
-
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-300">
-            AI agent
-          </label>
-
-          <select
-            value={selectedAgentId}
-            onChange={(e) =>
-              setSelectedAgentId(e.target.value)
-            }
-            className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-violet-500/60"
-          >
-            <option value="">
-              Select an agent
-            </option>
-
-            {agents.map((agent) => (
-              <option
-                key={agent._id}
-                value={agent._id}
+              <button
+                type="button"
+                onClick={() => setShowNewEvaluation(false)}
+                className="rounded-lg p-2 text-slate-500 transition hover:bg-white/5 hover:text-white"
               >
-                {agent.name}
-              </option>
-            ))}
-          </select>
-        </div>
+                <X size={19} />
+              </button>
+
+            </div>
 
 
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-300">
-            Test input
-          </label>
+            <form
+              onSubmit={runNewEvaluation}
+              className="space-y-5 p-6"
+            >
 
-          <textarea
-            value={evaluationInput}
-            onChange={(e) =>
-              setEvaluationInput(e.target.value)
-            }
-            placeholder="Ask your AI agent something..."
-            rows="4"
-            className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-violet-500/60"
-          />
-        </div>
-
-
-        {evaluationResult && (
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-
-            <p className="text-sm font-semibold text-emerald-400">
-              Evaluation completed
-            </p>
-
-            <p className="mt-2 text-xs text-slate-400">
-              Latency: {evaluationResult.latency} ms
-            </p>
-
-            <pre className="mt-4 max-h-52 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950/70 p-4 text-xs leading-6 text-slate-300">
-              {JSON.stringify(
-                evaluationResult.response,
-                null,
-                2
+              {evaluationRunError && (
+                <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  {evaluationRunError}
+                </div>
               )}
-            </pre>
+
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  AI agent
+                </label>
+
+                <select
+                  value={selectedAgentId}
+                  onChange={(e) =>
+                    setSelectedAgentId(e.target.value)
+                  }
+                  className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-violet-500/60"
+                >
+                  <option value="">
+                    Select an agent
+                  </option>
+
+                  {agents.map((agent) => (
+                    <option
+                      key={agent._id}
+                      value={agent._id}
+                    >
+                      {agent.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Test input
+                </label>
+
+                <textarea
+                  value={evaluationInput}
+                  onChange={(e) =>
+                    setEvaluationInput(e.target.value)
+                  }
+                  placeholder="Ask your AI agent something..."
+                  rows="4"
+                  className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-violet-500/60"
+                />
+              </div>
+
+
+              {evaluationResult && (
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+
+                  <p className="text-sm font-semibold text-emerald-400">
+                    Evaluation completed
+                  </p>
+
+                  <p className="mt-2 text-xs text-slate-400">
+                    Latency: {evaluationResult.latency} ms
+                  </p>
+
+                  <pre className="mt-4 max-h-52 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950/70 p-4 text-xs leading-6 text-slate-300">
+                    {JSON.stringify(
+                      evaluationResult.response,
+                      null,
+                      2
+                    )}
+                  </pre>
+
+                </div>
+              )}
+
+
+              <div className="flex gap-3 pt-2">
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowNewEvaluation(false)
+                  }
+                  className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/5"
+                >
+                  Close
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={
+                    evaluationRunLoading ||
+                    agents.length === 0
+                  }
+                  className="flex-1 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {evaluationRunLoading
+                    ? "Running..."
+                    : "Run evaluation"}
+                </button>
+
+              </div>
+
+            </form>
 
           </div>
-        )}
-
-
-        <div className="flex gap-3 pt-2">
-
-          <button
-            type="button"
-            onClick={() =>
-              setShowNewEvaluation(false)
-            }
-            className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/5"
-          >
-            Close
-          </button>
-
-          <button
-            type="submit"
-            disabled={
-              evaluationRunLoading ||
-              agents.length === 0
-            }
-            className="flex-1 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {evaluationRunLoading
-              ? "Running..."
-              : "Run evaluation"}
-          </button>
 
         </div>
-
-      </form>
-
-    </div>
-
-  </div>
-)}
+      )}
 
 
     </div>
@@ -928,7 +929,7 @@ function EvaluationRow({
         {success ? "Passed" : "Failed"}
       </span>
 
-     
+
 
     </div>
 
