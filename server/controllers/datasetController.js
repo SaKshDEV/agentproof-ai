@@ -139,3 +139,33 @@ export const updateDataset = async (req, res) => {
     });
   }
 };
+export const deleteDataset = async (req, res) => {
+  try {
+    const dataset = await Dataset.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
+    if (!dataset) {
+      return res.status(404).json({
+        message: "Dataset not found",
+      });
+    }
+
+    await dataset.deleteOne();
+
+    return res.status(200).json({
+      message: "Dataset deleted successfully",
+    });
+
+  } catch (error) {
+    console.error(
+      "Delete dataset error:",
+      error.message
+    );
+
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
