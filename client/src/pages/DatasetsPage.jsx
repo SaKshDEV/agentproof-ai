@@ -304,6 +304,7 @@ function DatasetsPage() {
             {datasets.map((dataset) => (
 
               <div
+              onClick={() => navigate(`/datasets/${dataset._id}`)}
                 key={dataset._id}
                 className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-violet-500/30"
               >

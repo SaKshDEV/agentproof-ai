@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoutes";
 import AgentsPage from "./pages/AgentsPage";
 import EvaluationsPage from "./pages/EvaluationsPage";
 import DatasetsPage from "./pages/DatasetsPage";
+import DatasetDetailPage from "./pages/DatasetDetailPage";
 
 function App() {
   return (
@@ -57,6 +58,14 @@ function App() {
         element={
           <ProtectedRoute>
             <DatasetsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/datasets/:id"
+        element={
+          <ProtectedRoute>
+            <DatasetDetailPage />
           </ProtectedRoute>
         }
       />
