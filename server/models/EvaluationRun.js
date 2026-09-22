@@ -13,10 +13,29 @@ const evaluationRunSchema = new mongoose.Schema(
       ref: "Agent",
       required: true,
     },
+    dataset: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Dataset",
+      default: null
+    },
+    batch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "EvaluationBatch",
+      default: null
+    },
+    testCaseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+    },
 
     input: {
       type: String,
       required: true,
+      trim: true,
+    },
+    expectedOutput: {
+      type: String,
+      default: "",
       trim: true,
     },
 
