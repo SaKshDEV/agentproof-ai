@@ -817,7 +817,8 @@ function DatasetDetailPage() {
       )}
       {showRunModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
+          <div className="
+          max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
               <div >
                 <p className="text-sm font-medium text-violet-400">
@@ -882,41 +883,218 @@ function DatasetDetailPage() {
                 </div>
               )}
 
-
               {batchResult && (
-                <div className="mt-5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                <div className="mt-6">
 
-                  <p className="font-semibold text-emerald-400">
-                    Batch completed ✅
-                  </p>
+                  <div className="flex items-start gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
 
-                  <div className="mt-3 space-y-1 text-sm text-slate-300">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+                      <CheckCircle2 size={20} />
+                    </div>
 
-                    <p>
-                      Total tests:{" "}
-                      {batchResult.batch.totalTests}
-                    </p>
+                    <div>
+                      <p className="font-semibold text-emerald-400">
+                        Batch evaluation completed
+                      </p>
 
-                    <p>
-                      Successful:{" "}
-                      {batchResult.batch.successfulRuns}
-                    </p>
-
-                    <p>
-                      Failed:{" "}
-                      {batchResult.batch.failedRuns}
-                    </p>
-
-                    <p>
-                      Average latency:{" "}
-                      {batchResult.batch.averageLatency} ms
-                    </p>
+                      <p className="mt-1 text-sm text-slate-400">
+                        All test cases finished running against the selected agent.
+                      </p>
+                    </div>
 
                   </div>
 
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+
+                    <BatchStat
+                      label="Total tests"
+                      value={batchResult.batch.totalTests}
+                    />
+
+                    <BatchStat
+                      label="Successful runs"
+                      value={batchResult.batch.successfulRuns}
+                    />
+
+                    <BatchStat
+                      label="Failed runs"
+                      value={batchResult.batch.failedRuns}
+                    />
+
+                    <BatchStat
+                      label="Avg latency"
+                      value={`${batchResult.batch.averageLatency} ms`}
+                    />
+
+                  </div>
+
+
+                  <div className="mt-8">
+
+                    <div className="flex items-center gap-2">
+
+                      <Bot
+                        size={18}
+                        className="text-violet-400"
+                      />
+
+                      <h3 className="font-semibold text-white">
+                        Test results
+                      </h3>
+
+                    </div>
+
+
+                    <div className="mt-4 space-y-4">
+
+                      {batchResult.results.map(
+                        (result, index) => (
+
+                          <div
+                            key={
+                              result.evaluationId ||
+                              result.testCaseId ||
+                              index
+                            }
+                            className="rounded-2xl border border-white/10 bg-slate-950/60 p-5"
+                          >
+
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+
+                              <div className="flex items-center gap-3">
+
+                                {result.success ? (
+                                  <CheckCircle2
+                                    size={18}
+                                    className="text-emerald-400"
+                                  />
+                                ) : (
+                                  <XCircle
+                                    size={18}
+                                    className="text-red-400"
+                                  />
+                                )}
+
+                                <div>
+                                  <p className="text-sm font-semibold text-white">
+                                    Test case {index + 1}
+                                  </p>
+
+                                  <p
+                                    className={`mt-1 text-xs ${result.success
+                                      ? "text-emerald-400"
+                                      : "text-red-400"
+                                      }`}
+                                  >
+                                    {result.success
+                                      ? "Execution passed"
+                                      : "Execution failed"}
+                                  </p>
+                                </div>
+
+                              </div>
+
+
+                              <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-slate-400">
+
+                                <Clock3 size={14} />
+
+                                {result.latency} ms
+
+                              </div>
+
+                            </div>
+
+
+                            <div className="mt-5">
+
+                              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                Input
+                              </p>
+
+                              <div className="mt-2 rounded-xl border border-white/5 bg-black/20 p-4 text-sm leading-6 text-slate-300">
+                                {result.input}
+                              </div>
+
+                            </div>
+
+
+                            <div className="mt-4">
+
+                              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                Expected output
+                              </p>
+
+                              <div className="mt-2 rounded-xl border border-white/5 bg-black/20 p-4 text-sm leading-6 text-slate-300">
+
+                                {result.expectedOutput ||
+                                  "No expected output provided."}
+
+                              </div>
+
+                            </div>
+
+
+                            {result.success ? (
+
+                              <div className="mt-4">
+
+                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                  Agent response
+                                </p>
+
+                                <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words rounded-xl border border-violet-500/10 bg-violet-500/[0.04] p-4 text-sm leading-6 text-slate-300">
+                                  {typeof result.output === "string"
+                                    ? result.output
+                                    : JSON.stringify(
+                                      result.output,
+                                      null,
+                                      2
+                                    )}
+                                </pre>
+
+                              </div>
+
+                            ) : (
+
+                              <div className="mt-4">
+
+                                <p className="text-xs font-semibold uppercase tracking-wider text-red-400">
+                                  Error
+                                </p>
+
+                                <div className="mt-2 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+                                  {result.error ||
+                                    "Agent execution failed"}
+                                </div>
+
+                              </div>
+
+                            )}
+
+                          </div>
+
+                        )
+                      )}
+
+                    </div>
+
+                  </div>
+
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowRunModal(false)
+                    }
+                    className="mt-6 w-full rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  >
+                    Close
+                  </button>
+
                 </div>
               )}
-
 
               {!batchResult && (
                 <button
@@ -942,6 +1120,24 @@ function DatasetDetailPage() {
 
         </div>
       )}
+
+    </div>
+  );
+}
+function BatchStat({
+  label,
+  value,
+}) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+
+      <p className="text-xs text-slate-500">
+        {label}
+      </p>
+
+      <p className="mt-2 text-xl font-bold text-white">
+        {value}
+      </p>
 
     </div>
   );
