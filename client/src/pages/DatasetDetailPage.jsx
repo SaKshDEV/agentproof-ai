@@ -12,6 +12,11 @@ import {
   Trash2,
   X,
   Plus,
+  Play,
+  Bot,
+  Clock3,
+  CheckCircle2,
+  XCircle
 } from "lucide-react";
 
 import api from "../services/api";
@@ -31,17 +36,24 @@ function DatasetDetailPage() {
   const [editDescription, setEditDescription] =
     useState("");
 
-  const [editTestCases, setEditTestCases] =
-    useState([]);
+  const [editTestCases, setEditTestCases] = useState([]);
 
-  const [editLoading, setEditLoading] =
-    useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
-  const [editError, setEditError] =
-    useState("");
+  const [editError, setEditError] = useState("");
 
-  const [deleteLoading, setDeleteLoading] =
-    useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [agents, setAgents] = useState([]);
+
+  const [showRunModal, setShowRunModal] = useState(false);
+
+  const [selectedAgentId, setSelectedAgentId] = useState("");
+
+  const [runLoading, setRunLoading] = useState(false);
+
+  const [runError, setRunError] = useState("");
+
+  const [batchResult, setBatchResult] = useState(null);
 
 
   const fetchDataset = async () => {
@@ -73,7 +85,84 @@ function DatasetDetailPage() {
       setLoading(false);
     }
   };
+  const fetchAgents = async () => {
+    try {
+      const token =
+        localStorage.getItem("token");
 
+      const response = await api.get(
+        "/agents",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setAgents(
+        response.data.agents || []
+      );
+
+    } catch (error) {
+      console.error(
+        "Failed to load agents:",
+        error
+      );
+    }
+  };
+  const openRunModal = () => {
+    setSelectedAgentId(
+      agents.length > 0
+        ? agents[0]._id
+        : ""
+    )
+
+    setRunError("");
+    setBatchResult(null);
+    setShowRunModal(true);
+  }
+  const runBatchEvaluation = async () => {
+    if (!selectedAgentId) {
+      setRunError(
+        "Please select an agent."
+      );
+      return;
+    }
+
+    try {
+      setRunLoading(true);
+      setRunError("");
+      setBatchResult(null);
+
+      const token =
+        localStorage.getItem("token");
+
+      const response = await api.post(
+        "/evaluations/batch",
+        {
+          agentId: selectedAgentId,
+          datasetId: id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setBatchResult(response.data);
+
+    } catch (error) {
+      setRunError(
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Batch evaluation failed"
+      );
+
+    } finally {
+      setRunLoading(false);
+    }
+  };
 
   const openEditModal = () => {
     setEditName(dataset.name);
@@ -134,9 +223,9 @@ function DatasetDetailPage() {
         (testCase, index) =>
           index === indexToUpdate
             ? {
-                ...testCase,
-                [field]: value,
-              }
+              ...testCase,
+              [field]: value,
+            }
             : testCase
       )
     );
@@ -253,7 +342,8 @@ function DatasetDetailPage() {
 
 
   useEffect(() => {
-    fetchDataset();
+    fetchAgents(),
+      fetchDataset();
   }, [id]);
 
 
@@ -316,7 +406,7 @@ function DatasetDetailPage() {
         )}
 
 
-        
+
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
 
           <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-start">
@@ -361,8 +451,16 @@ function DatasetDetailPage() {
             </div>
 
 
-          
+
             <div className="flex shrink-0 gap-2">
+
+              <button
+                type="button"
+                onClick={openRunModal}
+                className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-500">
+                <Play size={16} />
+                Run Dataset
+              </button>
 
               <button
                 type="button"
@@ -394,7 +492,7 @@ function DatasetDetailPage() {
         </div>
 
 
-        
+
         <div className="mt-8">
 
           <p className="text-sm font-medium text-violet-400">
@@ -472,7 +570,7 @@ function DatasetDetailPage() {
       </div>
 
 
-     
+
       {showEditModal && (
 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-8 backdrop-blur-sm">
@@ -560,7 +658,7 @@ function DatasetDetailPage() {
               </div>
 
 
-              {/* EDIT TEST CASES */}
+
               <div>
 
                 <div className="flex items-center justify-between gap-4">
@@ -716,6 +814,133 @@ function DatasetDetailPage() {
 
         </div>
 
+      )}
+      {showRunModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
+              <div >
+                <p className="text-sm font-medium text-violet-400">
+                  Batch evaluation
+                </p>
+                <h2 className="mt-1 text-xl font-semibold">
+                  Run Dataset
+
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setShowRunModal(false)
+                }
+                className="rounded-lg p-2 text-slate-500 transition hover:bg-white/5 hover:text-white"
+              >
+                <X size={19} />
+              </button>
+            </div>
+            <div className="p-6">
+              <label className="mb-2 block text-sm font-medium text-slate-300">
+                Select agent
+              </label>
+              {agents.length === 0 ? (
+                <div>
+                  No agents available
+                </div>
+              ) : (
+                <select
+                  value={selectedAgentId}
+                  onChange={(e) => setSelectedAgentId(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-violet-500/60">
+                  {agents.map((agent) => (
+                    <option key={agent._id} value={agent._id}>
+                      {agent.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+
+                <p className="text-sm font-medium">
+                  {dataset.name}
+                </p>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  {dataset.testCases?.length || 0}{" "}
+                  {dataset.testCases?.length === 1
+                    ? "test case"
+                    : "test cases"}{" "}
+                  will run against the selected agent.
+                </p>
+
+              </div>
+
+
+              {runError && (
+                <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  {runError}
+                </div>
+              )}
+
+
+              {batchResult && (
+                <div className="mt-5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+
+                  <p className="font-semibold text-emerald-400">
+                    Batch completed ✅
+                  </p>
+
+                  <div className="mt-3 space-y-1 text-sm text-slate-300">
+
+                    <p>
+                      Total tests:{" "}
+                      {batchResult.batch.totalTests}
+                    </p>
+
+                    <p>
+                      Successful:{" "}
+                      {batchResult.batch.successfulRuns}
+                    </p>
+
+                    <p>
+                      Failed:{" "}
+                      {batchResult.batch.failedRuns}
+                    </p>
+
+                    <p>
+                      Average latency:{" "}
+                      {batchResult.batch.averageLatency} ms
+                    </p>
+
+                  </div>
+
+                </div>
+              )}
+
+
+              {!batchResult && (
+                <button
+                  type="button"
+                  onClick={runBatchEvaluation}
+                  disabled={
+                    runLoading ||
+                    agents.length === 0
+                  }
+                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Play size={17} />
+
+                  {runLoading
+                    ? "Running evaluation..."
+                    : "Run evaluation"}
+                </button>
+              )}
+
+            </div>
+
+          </div>
+
+        </div>
       )}
 
     </div>
