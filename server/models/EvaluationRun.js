@@ -58,10 +58,39 @@ const evaluationRunSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+  evaluation: {
+  method: {
+    type: String,
+    enum: [
+      "none",
+      "normalized_exact",
+      "semantic",
+    ],
+    default: "none",
+  },
+
+  score: {
+    type: Number,
+    default: null,
+    min: 0,
+    max: 100,
+  },
+
+  passed: {
+    type: Boolean,
+    default: null,
+  },
+
+  reason: {
+    type: String,
+    default: "",
+  },
+},
   },
   {
     timestamps: true,
-  }
+  },
+
 );
 
 const EvaluationRun = mongoose.model(
