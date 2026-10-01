@@ -2,6 +2,9 @@ import Agent from "../models/Agent.js";
 import Dataset from "../models/Dataset.js";
 import EvaluationBatch from "../models/EvaluationBatch.js";
 import EvaluationRun from "../models/EvaluationRun.js";
+import {
+  evaluateNormalizedExact,
+} from "../services/evaluationService.js";
 
 
 export const getEvaluations = async (req, res) => {
@@ -29,6 +32,8 @@ export const getEvaluations = async (req, res) => {
     });
   }
 };
+
+
 export const runBatchEvaluation = async (req, res) => {
   const { agentId, datasetId } = req.body;
 
@@ -41,7 +46,6 @@ export const runBatchEvaluation = async (req, res) => {
       });
     }
 
-    // 1. Check agent belongs to logged-in user
     const agent = await Agent.findOne({
       _id: agentId,
       user: req.user._id,
@@ -53,7 +57,6 @@ export const runBatchEvaluation = async (req, res) => {
       });
     }
 
-    // 2. Check dataset belongs to logged-in user
     const dataset = await Dataset.findOne({
       _id: datasetId,
       user: req.user._id,
@@ -65,14 +68,12 @@ export const runBatchEvaluation = async (req, res) => {
       });
     }
 
-    // 3. Dataset should contain at least one test case
     if (!dataset.testCases.length) {
       return res.status(400).json({
         message: "Dataset has no test cases",
       });
     }
 
-    // 4. Create batch record before running tests
     batch = await EvaluationBatch.create({
       user: req.user._id,
       agent: agent._id,
@@ -87,7 +88,6 @@ export const runBatchEvaluation = async (req, res) => {
 
     const results = [];
 
-    // 5. Run every dataset test case
     for (const testCase of dataset.testCases) {
       const startTime = Date.now();
 
@@ -142,15 +142,18 @@ export const runBatchEvaluation = async (req, res) => {
             await response.json();
         }
 
-
         const latency =
           Date.now() - startTime;
 
         totalLatency += latency;
         successfulRuns += 1;
 
+        const evaluation =
+          evaluateNormalizedExact(
+            testCase.expectedOutput || "",
+            agentResponse
+          );
 
-        // Save successful individual run
         const evaluationRun =
           await EvaluationRun.create({
             user: req.user._id,
@@ -178,8 +181,9 @@ export const runBatchEvaluation = async (req, res) => {
             success: true,
 
             error: "",
-          });
 
+            evaluation,
+          });
 
         results.push({
           evaluationId:
@@ -202,18 +206,25 @@ export const runBatchEvaluation = async (req, res) => {
           success: true,
 
           error: "",
+
+          evaluation,
         });
 
       } catch (error) {
-
         const latency =
           Date.now() - startTime;
 
         totalLatency += latency;
         failedRuns += 1;
 
+        const failedEvaluation = {
+          method: "none",
+          score: null,
+          passed: null,
+          reason:
+            "Agent execution failed before the response could be evaluated.",
+        };
 
-        // Save failed individual run
         const evaluationRun =
           await EvaluationRun.create({
             user: req.user._id,
@@ -243,8 +254,10 @@ export const runBatchEvaluation = async (req, res) => {
 
             error:
               error.message,
-          });
 
+            evaluation:
+              failedEvaluation,
+          });
 
         results.push({
           evaluationId:
@@ -267,22 +280,21 @@ export const runBatchEvaluation = async (req, res) => {
 
           error:
             error.message,
+
+          evaluation:
+            failedEvaluation,
         });
       }
     }
 
-
-    // 6. Calculate batch average latency
     const averageLatency =
       dataset.testCases.length > 0
         ? Math.round(
-            totalLatency /
-              dataset.testCases.length
-          )
+          totalLatency /
+          dataset.testCases.length
+        )
         : 0;
 
-
-    // 7. Update batch summary
     batch.status = "completed";
 
     batch.successfulRuns =
@@ -299,8 +311,6 @@ export const runBatchEvaluation = async (req, res) => {
 
     await batch.save();
 
-
-    // 8. Return final batch result
     return res.status(200).json({
       message:
         "Batch evaluation completed",
@@ -334,8 +344,6 @@ export const runBatchEvaluation = async (req, res) => {
       error.message
     );
 
-
-    
     if (batch) {
       try {
         batch.status = "failed";
@@ -352,7 +360,6 @@ export const runBatchEvaluation = async (req, res) => {
         );
       }
     }
-
 
     return res.status(500).json({
       message:
