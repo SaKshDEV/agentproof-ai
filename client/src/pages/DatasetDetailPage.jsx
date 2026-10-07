@@ -905,7 +905,7 @@ function DatasetDetailPage() {
                   </div>
 
 
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 
                     <BatchStat
                       label="Total tests"
@@ -913,14 +913,28 @@ function DatasetDetailPage() {
                     />
 
                     <BatchStat
-                      label="Successful runs"
-                      value={batchResult.batch.successfulRuns}
+                      label="Execution success"
+                      value={`${batchResult.batch.successfulRuns}/${batchResult.batch.totalTests}`}
                     />
 
                     <BatchStat
-                      label="Failed runs"
-                      value={batchResult.batch.failedRuns}
+                      label="Evaluated tests"
+                      value={batchResult.batch.evaluatedTests}
                     />
+                    <BatchStat
+                      label="Correctness rate"
+                      value={
+                        batchResult.batch.correctnessRate == null
+                        ? "N/A"
+                        : `${batchResult.batch.correctnessRate}%`
+                      } />
+                    <BatchStat
+                      label="Average score"
+                      value={
+                        batchResult.batch.averageScore == null
+                        ? "N/A"
+                        : `${batchResult.batch.averageScore}%`
+                      } />
 
                     <BatchStat
                       label="Avg latency"

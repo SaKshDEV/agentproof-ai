@@ -85,6 +85,10 @@ export const runBatchEvaluation = async (req, res) => {
     let successfulRuns = 0;
     let failedRuns = 0;
     let totalLatency = 0;
+    let evaluatedTests = 0;
+    let passedEvaluations = 0;
+    let failedEvaluations = 0;
+    let totalScore = 0;
 
     const results = [];
 
@@ -153,6 +157,18 @@ export const runBatchEvaluation = async (req, res) => {
             testCase.expectedOutput || "",
             agentResponse
           );
+        if (evaluation.passed != null &&
+          evaluation.score != null
+        ) {
+          evaluatedTests += 1;
+          totalScore += evaluation.score;
+
+          if (evaluation.passed) {
+            passedEvaluations += 1;
+          } else {
+            failedEvaluations += 1;
+          }
+        }
 
         const evaluationRun =
           await EvaluationRun.create({
@@ -295,19 +311,53 @@ export const runBatchEvaluation = async (req, res) => {
         )
         : 0;
 
-    batch.status = "completed";
+    const averageScore =
+      evaluatedTests > 0
+        ? Number(
+          (
+            totalScore / evaluatedTests
+          ).toFixed(2)
+        )
+        : null
+    const correctnessRate =
+      evaluatedTests > 0
+        ? Number(
+          (
+            (passedEvaluations /
+              evaluatedTests) *
+            100
+          ).toFixed(2)
+        )
+        : null;
 
-    batch.successfulRuns =
-      successfulRuns;
+batch.status = "completed";
 
-    batch.failedRuns =
-      failedRuns;
+batch.successfulRuns =
+  successfulRuns;
 
-    batch.averageLatency =
-      averageLatency;
+batch.failedRuns =
+  failedRuns;
 
-    batch.completedAt =
-      new Date();
+batch.evaluatedTests =
+  evaluatedTests;
+
+batch.passedEvaluations =
+  passedEvaluations;
+
+batch.failedEvaluations =
+  failedEvaluations;
+
+batch.averageScore =
+  averageScore;
+
+batch.correctnessRate =
+  correctnessRate;
+
+batch.averageLatency =
+  averageLatency;
+
+batch.completedAt =
+  new Date();
 
     await batch.save();
 
@@ -315,25 +365,35 @@ export const runBatchEvaluation = async (req, res) => {
       message:
         "Batch evaluation completed",
 
-      batch: {
-        _id: batch._id,
+batch: {
+  _id: batch._id,
 
-        agent: agent.name,
+  agent: agent.name,
 
-        dataset: dataset.name,
+  dataset: dataset.name,
 
-        totalTests:
-          dataset.testCases.length,
+  totalTests:
+    dataset.testCases.length,
 
-        successfulRuns,
+  successfulRuns,
 
-        failedRuns,
+  failedRuns,
 
-        averageLatency,
+  evaluatedTests,
 
-        status:
-          batch.status,
-      },
+  passedEvaluations,
+
+  failedEvaluations,
+
+  averageScore,
+
+  correctnessRate,
+
+  averageLatency,
+
+  status:
+    batch.status,
+},
 
       results,
     });

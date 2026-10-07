@@ -45,6 +45,27 @@ const evaluationBatchSchema =
         type: Number,
         default: 0,
       },
+      evaluatedTests: {
+        type: Number,
+        default: 0,
+      },
+      passedEvaluations: {
+        type: Number,
+        default: 0,
+      },
+      failedEvaluations: {
+        type: Number,
+        default: 0,
+      },
+      averageScore: {
+        type: Number,
+        default: null,
+      },
+
+      correctnessRate: {
+        type: Number,
+        default: null,
+      },
 
       averageLatency: {
         type: Number,
@@ -61,10 +82,10 @@ const evaluationBatchSchema =
     }
   );
 
-const EvaluationBatch = 
-mongoose.model(
+const EvaluationBatch =
+  mongoose.model(
     "EvaluationBatch",
     evaluationBatchSchema
-)
+  )
 
 export default EvaluationBatch;
