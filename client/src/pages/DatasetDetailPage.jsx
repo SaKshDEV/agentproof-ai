@@ -1005,6 +1005,51 @@ function DatasetDetailPage() {
                               </div>
 
                             </div>
+                            {result.evaluation && (
+                              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                                  <p className="text-xs text-slate-500">
+                                    Correctness
+
+                                  </p>
+                                  <p className={`mt-2 text-sm font-semibold ${result.evaluation.passed === true
+                                    ? "text-emerald-400"
+                                    : result.evaluation.passed === false
+                                      ? "text-red-400"
+                                      : "text-slate-400"
+                                    }`} >
+                                    {result.evaluation.passed === true
+                                      ? "Passed"
+                                      : result.evaluation.passed === false
+                                        ? "Failed"
+                                        : "Not evaluated"}
+
+                                  </p>
+                                </div>
+                                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                                  <p className="text-xs text-slate-500">
+                                    Score
+                                  </p>
+                                  <p className="mt-2 text-sm font-semibold text-white">
+                                    {result.evaluation.score === null
+                                      ? "N/A"
+                                      : `${result.evaluation.score}%`}
+                                  </p>
+                                </div>
+                                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                                  <p className="text-xs text-slate-500">
+                                    Method
+                                  </p>
+                                  <p className="mt-2 text-sm font-semibold text-slate-300">
+                                    {result.evaluation.method === "normalized_exact"
+                                      ? "Normalized Exact"
+                                      : result.evaluation.method === "semantic"
+                                        ? "Semantic"
+                                        : "None"}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
 
 
                             <div className="mt-5">
@@ -1071,6 +1116,26 @@ function DatasetDetailPage() {
 
                               </div>
 
+                            )}
+                            {result.evaluation?.reason && (
+                              <div className="mt-4">
+
+                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                  Evaluation reason
+                                </p>
+
+                                <div
+                                  className={`mt-2 rounded-xl border p-4 text-sm leading-6 ${result.evaluation.passed === true
+                                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                                      : result.evaluation.passed === false
+                                        ? "border-red-500/20 bg-red-500/10 text-red-300"
+                                        : "border-white/10 bg-white/[0.03] text-slate-400"
+                                    }`}
+                                >
+                                  {result.evaluation.reason}
+                                </div>
+
+                              </div>
                             )}
 
                           </div>
