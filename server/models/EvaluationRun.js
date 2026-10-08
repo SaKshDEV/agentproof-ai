@@ -64,6 +64,7 @@ const evaluationRunSchema = new mongoose.Schema(
     enum: [
       "none",
       "normalized_exact",
+      "token_similarity",
       "semantic",
     ],
     default: "none",

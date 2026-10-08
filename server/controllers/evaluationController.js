@@ -4,6 +4,7 @@ import EvaluationBatch from "../models/EvaluationBatch.js";
 import EvaluationRun from "../models/EvaluationRun.js";
 import {
   evaluateNormalizedExact,
+  evaluateTokenSimilarity,
 } from "../services/evaluationService.js";
 
 
@@ -152,11 +153,23 @@ export const runBatchEvaluation = async (req, res) => {
         totalLatency += latency;
         successfulRuns += 1;
 
-        const evaluation =
+        const exactEvaluation =
           evaluateNormalizedExact(
             testCase.expectedOutput || "",
             agentResponse
           );
+
+        let evaluation = exactEvaluation;
+
+        if (exactEvaluation.passed === false) {
+          evaluation =
+            evaluateTokenSimilarity(
+              testCase.expectedOutput || "",
+              agentResponse
+            );
+        }
+
+
         if (evaluation.passed != null &&
           evaluation.score != null
         ) {
@@ -330,34 +343,34 @@ export const runBatchEvaluation = async (req, res) => {
         )
         : null;
 
-batch.status = "completed";
+    batch.status = "completed";
 
-batch.successfulRuns =
-  successfulRuns;
+    batch.successfulRuns =
+      successfulRuns;
 
-batch.failedRuns =
-  failedRuns;
+    batch.failedRuns =
+      failedRuns;
 
-batch.evaluatedTests =
-  evaluatedTests;
+    batch.evaluatedTests =
+      evaluatedTests;
 
-batch.passedEvaluations =
-  passedEvaluations;
+    batch.passedEvaluations =
+      passedEvaluations;
 
-batch.failedEvaluations =
-  failedEvaluations;
+    batch.failedEvaluations =
+      failedEvaluations;
 
-batch.averageScore =
-  averageScore;
+    batch.averageScore =
+      averageScore;
 
-batch.correctnessRate =
-  correctnessRate;
+    batch.correctnessRate =
+      correctnessRate;
 
-batch.averageLatency =
-  averageLatency;
+    batch.averageLatency =
+      averageLatency;
 
-batch.completedAt =
-  new Date();
+    batch.completedAt =
+      new Date();
 
     await batch.save();
 
@@ -365,35 +378,35 @@ batch.completedAt =
       message:
         "Batch evaluation completed",
 
-batch: {
-  _id: batch._id,
+      batch: {
+        _id: batch._id,
 
-  agent: agent.name,
+        agent: agent.name,
 
-  dataset: dataset.name,
+        dataset: dataset.name,
 
-  totalTests:
-    dataset.testCases.length,
+        totalTests:
+          dataset.testCases.length,
 
-  successfulRuns,
+        successfulRuns,
 
-  failedRuns,
+        failedRuns,
 
-  evaluatedTests,
+        evaluatedTests,
 
-  passedEvaluations,
+        passedEvaluations,
 
-  failedEvaluations,
+        failedEvaluations,
 
-  averageScore,
+        averageScore,
 
-  correctnessRate,
+        correctnessRate,
 
-  averageLatency,
+        averageLatency,
 
-  status:
-    batch.status,
-},
+        status:
+          batch.status,
+      },
 
       results,
     });

@@ -925,15 +925,15 @@ function DatasetDetailPage() {
                       label="Correctness rate"
                       value={
                         batchResult.batch.correctnessRate == null
-                        ? "N/A"
-                        : `${batchResult.batch.correctnessRate}%`
+                          ? "N/A"
+                          : `${batchResult.batch.correctnessRate}%`
                       } />
                     <BatchStat
                       label="Average score"
                       value={
                         batchResult.batch.averageScore == null
-                        ? "N/A"
-                        : `${batchResult.batch.averageScore}%`
+                          ? "N/A"
+                          : `${batchResult.batch.averageScore}%`
                       } />
 
                     <BatchStat
@@ -1057,9 +1057,11 @@ function DatasetDetailPage() {
                                   <p className="mt-2 text-sm font-semibold text-slate-300">
                                     {result.evaluation.method === "normalized_exact"
                                       ? "Normalized Exact"
-                                      : result.evaluation.method === "semantic"
-                                        ? "Semantic"
-                                        : "None"}
+                                      : result.evaluation.method === "token_similarity"
+                                        ? "Token Similarity"
+                                        : result.evaluation.method === "semantic"
+                                          ? "Semantic"
+                                          : "None"}
                                   </p>
                                 </div>
                               </div>
@@ -1140,10 +1142,10 @@ function DatasetDetailPage() {
 
                                 <div
                                   className={`mt-2 rounded-xl border p-4 text-sm leading-6 ${result.evaluation.passed === true
-                                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                                      : result.evaluation.passed === false
-                                        ? "border-red-500/20 bg-red-500/10 text-red-300"
-                                        : "border-white/10 bg-white/[0.03] text-slate-400"
+                                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                                    : result.evaluation.passed === false
+                                      ? "border-red-500/20 bg-red-500/10 text-red-300"
+                                      : "border-white/10 bg-white/[0.03] text-slate-400"
                                     }`}
                                 >
                                   {result.evaluation.reason}
