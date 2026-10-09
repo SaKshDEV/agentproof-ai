@@ -12,9 +12,6 @@ const tokenizeText = (value) => {
     .filter(Boolean);
 };
 
-
-
-
 const extractTextFromOutput = (output) => {
   if (typeof output === "string") {
     return output;
@@ -101,6 +98,8 @@ export const evaluateTokenSimilarity = (
   expectedOutput,
   actualOutput
 ) => {
+
+
   if (!expectedOutput?.trim()) {
     return {
       method: "none",
