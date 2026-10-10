@@ -33,7 +33,90 @@ export const getEvaluations = async (req, res) => {
     });
   }
 };
+export const getEvaluationBatches = async (
+  req,
+  res
+) => {
+  try {
+    const batches = await EvaluationBatch.find({
+      user: req.user._id,
+    })
+      .populate(
+        "agent",
+        "name method endpointUrl"
+      )
+      .populate(
+        "dataset",
+        "name description"
+      )
+      .sort({
+        createdAt: -1,
+      });
+    return res.status(200).json({
+      batches,
+    });
 
+  } catch (error) {
+    console.error(
+      "Get evaluation batches error:",
+      error.message
+    );
+    return res.status(500).json({
+      message:
+        "Failed to load evaluation batches",
+    });
+  }
+};
+
+export const getEvaluationBatchById = async (
+  req,
+  res
+) => {
+  try {
+    const batch = await EvaluationBatch.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    })
+      .populate(
+        "agent",
+        "name method endpointUrl"
+      )
+      .populate(
+        "dataset",
+        "name description"
+      );
+    if (!batch) {
+      return res.status(404).json({
+        message:
+          "Evaluation batch not found",
+      });
+    }
+
+    const runs =
+      await EvaluationRun.find({
+        batch: batch._id,
+        user: req.user._id,
+      }).sort({
+        createdAt: 1,
+      });
+
+    return res.status(200).json({
+      batch,
+      runs,
+    });
+
+  } catch (error) {
+    console.error(
+      "Get evaluation batch error:",
+      error.message
+    );
+
+    return res.status(500).json({
+      message:
+        "Failed to load evaluation batch",
+    });
+  }
+};
 
 export const runBatchEvaluation = async (req, res) => {
   const { agentId, datasetId } = req.body;
@@ -93,92 +176,235 @@ export const runBatchEvaluation = async (req, res) => {
 
     const results = [];
 
-for (const testCase of dataset.testCases) {
-  const startTime = Date.now();
+    for (const testCase of dataset.testCases) {
+      const startTime = Date.now();
 
-  let agentResponse;
-  let latency;
+      let agentResponse;
+      let latency;
 
-  try {
-    if (agent.method === "POST") {
-      const response = await fetch(
-        agent.endpointUrl,
-        {
-          method: "POST",
+      try {
+        if (agent.method === "POST") {
+          const response = await fetch(
+            agent.endpointUrl,
+            {
+              method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
 
-          body: JSON.stringify({
-            input: testCase.input,
-          }),
+              body: JSON.stringify({
+                input: testCase.input,
+              }),
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(
+              `Agent returned status ${response.status}`
+            );
+          }
+
+          agentResponse =
+            await response.json();
+
+        } else {
+          const url = new URL(
+            agent.endpointUrl
+          );
+
+          url.searchParams.set(
+            "input",
+            testCase.input
+          );
+
+          const response =
+            await fetch(url);
+
+          if (!response.ok) {
+            throw new Error(
+              `Agent returned status ${response.status}`
+            );
+          }
+
+          agentResponse =
+            await response.json();
         }
-      );
 
-      if (!response.ok) {
-        throw new Error(
-          `Agent returned status ${response.status}`
-        );
+        latency =
+          Date.now() - startTime;
+
+        totalLatency += latency;
+        successfulRuns += 1;
+
+      } catch (error) {
+        latency =
+          Date.now() - startTime;
+
+        totalLatency += latency;
+        failedRuns += 1;
+
+        const failedEvaluation = {
+          method: "none",
+          score: null,
+          passed: null,
+          reason:
+            "Agent execution failed before the response could be evaluated.",
+        };
+
+        const evaluationRun =
+          await EvaluationRun.create({
+            user: req.user._id,
+
+            agent: agent._id,
+
+            dataset: dataset._id,
+
+            batch: batch._id,
+
+            testCaseId:
+              testCase._id,
+
+            input:
+              testCase.input,
+
+            expectedOutput:
+              testCase.expectedOutput || "",
+
+            output: null,
+
+            latency,
+
+            success: false,
+
+            error:
+              error.message,
+
+            evaluation:
+              failedEvaluation,
+          });
+
+        results.push({
+          evaluationId:
+            evaluationRun._id,
+
+          testCaseId:
+            testCase._id,
+
+          input:
+            testCase.input,
+
+          expectedOutput:
+            testCase.expectedOutput || "",
+
+          output: null,
+
+          latency,
+
+          success: false,
+
+          error:
+            error.message,
+
+          evaluation:
+            failedEvaluation,
+        });
+
+        continue;
       }
 
-      agentResponse =
-        await response.json();
 
-    } else {
-      const url = new URL(
-        agent.endpointUrl
-      );
+      let evaluation;
 
-      url.searchParams.set(
-        "input",
-        testCase.input
-      );
+      try {
+        const exactEvaluation =
+          evaluateNormalizedExact(
+            testCase.expectedOutput || "",
+            agentResponse
+          );
 
-      const response =
-        await fetch(url);
+        evaluation =
+          exactEvaluation;
 
-      if (!response.ok) {
-        throw new Error(
-          `Agent returned status ${response.status}`
+        if (
+          exactEvaluation.passed === false
+        ) {
+          evaluation =
+            evaluateTokenSimilarity(
+              testCase.expectedOutput || "",
+              agentResponse
+            );
+        }
+
+      } catch (error) {
+        console.error(
+          "Evaluation engine error:",
+          error.message
         );
+
+        evaluation = {
+          method: "none",
+          score: null,
+          passed: null,
+          reason:
+            "Evaluation engine could not evaluate this response.",
+        };
       }
 
-      agentResponse =
-        await response.json();
-    }
 
-    latency =
-      Date.now() - startTime;
+      if (
+        evaluation.passed !== null &&
+        evaluation.score !== null
+      ) {
+        evaluatedTests += 1;
 
-    totalLatency += latency;
-    successfulRuns += 1;
+        totalScore +=
+          evaluation.score;
 
-  } catch (error) {
-    latency =
-      Date.now() - startTime;
+        if (evaluation.passed) {
+          passedEvaluations += 1;
+        } else {
+          failedEvaluations += 1;
+        }
+      }
 
-    totalLatency += latency;
-    failedRuns += 1;
 
-    const failedEvaluation = {
-      method: "none",
-      score: null,
-      passed: null,
-      reason:
-        "Agent execution failed before the response could be evaluated.",
-    };
+      const evaluationRun =
+        await EvaluationRun.create({
+          user: req.user._id,
 
-    const evaluationRun =
-      await EvaluationRun.create({
-        user: req.user._id,
+          agent: agent._id,
 
-        agent: agent._id,
+          dataset: dataset._id,
 
-        dataset: dataset._id,
+          batch: batch._id,
 
-        batch: batch._id,
+          testCaseId:
+            testCase._id,
+
+          input:
+            testCase.input,
+
+          expectedOutput:
+            testCase.expectedOutput || "",
+
+          output:
+            agentResponse,
+
+          latency,
+
+          success: true,
+
+          error: "",
+
+          evaluation,
+        });
+
+
+      results.push({
+        evaluationId:
+          evaluationRun._id,
 
         testCaseId:
           testCase._id,
@@ -189,161 +415,18 @@ for (const testCase of dataset.testCases) {
         expectedOutput:
           testCase.expectedOutput || "",
 
-        output: null,
+        output:
+          agentResponse,
 
         latency,
 
-        success: false,
+        success: true,
 
-        error:
-          error.message,
+        error: "",
 
-        evaluation:
-          failedEvaluation,
+        evaluation,
       });
-
-    results.push({
-      evaluationId:
-        evaluationRun._id,
-
-      testCaseId:
-        testCase._id,
-
-      input:
-        testCase.input,
-
-      expectedOutput:
-        testCase.expectedOutput || "",
-
-      output: null,
-
-      latency,
-
-      success: false,
-
-      error:
-        error.message,
-
-      evaluation:
-        failedEvaluation,
-    });
-
-    continue;
-  }
-
-
-  let evaluation;
-
-  try {
-    const exactEvaluation =
-      evaluateNormalizedExact(
-        testCase.expectedOutput || "",
-        agentResponse
-      );
-
-    evaluation =
-      exactEvaluation;
-
-    if (
-      exactEvaluation.passed === false
-    ) {
-      evaluation =
-        evaluateTokenSimilarity(
-          testCase.expectedOutput || "",
-          agentResponse
-        );
     }
-
-  } catch (error) {
-    console.error(
-      "Evaluation engine error:",
-      error.message
-    );
-
-    evaluation = {
-      method: "none",
-      score: null,
-      passed: null,
-      reason:
-        "Evaluation engine could not evaluate this response.",
-    };
-  }
-
-
-  if (
-    evaluation.passed !== null &&
-    evaluation.score !== null
-  ) {
-    evaluatedTests += 1;
-
-    totalScore +=
-      evaluation.score;
-
-    if (evaluation.passed) {
-      passedEvaluations += 1;
-    } else {
-      failedEvaluations += 1;
-    }
-  }
-
-
-  const evaluationRun =
-    await EvaluationRun.create({
-      user: req.user._id,
-
-      agent: agent._id,
-
-      dataset: dataset._id,
-
-      batch: batch._id,
-
-      testCaseId:
-        testCase._id,
-
-      input:
-        testCase.input,
-
-      expectedOutput:
-        testCase.expectedOutput || "",
-
-      output:
-        agentResponse,
-
-      latency,
-
-      success: true,
-
-      error: "",
-
-      evaluation,
-    });
-
-
-  results.push({
-    evaluationId:
-      evaluationRun._id,
-
-    testCaseId:
-      testCase._id,
-
-    input:
-      testCase.input,
-
-    expectedOutput:
-      testCase.expectedOutput || "",
-
-    output:
-      agentResponse,
-
-    latency,
-
-    success: true,
-
-    error: "",
-
-    evaluation,
-  });
-}
 
     const averageLatency =
       dataset.testCases.length > 0
@@ -360,7 +443,7 @@ for (const testCase of dataset.testCases) {
             totalScore / evaluatedTests
           ).toFixed(2)
         )
-        : null
+        : null;
     const correctnessRate =
       evaluatedTests > 0
         ? Number(
