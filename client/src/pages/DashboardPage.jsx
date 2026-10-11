@@ -14,6 +14,7 @@ import {
   Clock3,
   TriangleAlert,
   X,
+  History,
 } from "lucide-react";
 
 import api from "../services/api"
@@ -309,6 +310,13 @@ function DashboardPage() {
               icon={FlaskConical}
               label="Evaluations"
               onClick={() => navigate("/evaluations")}
+            />
+            <SidebarItem
+              icon={History}
+              label="Batch History"
+              onClick={() =>
+                navigate("/evaluations/batches")
+              }
             />
 
             <SidebarItem

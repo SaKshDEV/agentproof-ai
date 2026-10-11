@@ -8,6 +8,8 @@ import AgentsPage from "./pages/AgentsPage";
 import EvaluationsPage from "./pages/EvaluationsPage";
 import DatasetsPage from "./pages/DatasetsPage";
 import DatasetDetailPage from "./pages/DatasetDetailPage";
+import BatchHistoryPage from "./pages/BatchHistoryPage";
+import BatchDetailPage from "./pages/BatchDetailPage";
 
 function App() {
   return (
@@ -52,6 +54,23 @@ function App() {
           </ProtectedRoute>
         }
 
+
+      />
+      <Route
+        path="/evaluations/batches"
+        element={
+          <ProtectedRoute>
+            <BatchHistoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/evaluations/batches/:id"
+        element={
+          <ProtectedRoute>
+            <BatchDetailPage />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/datasets"
