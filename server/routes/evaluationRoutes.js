@@ -5,6 +5,7 @@ import {
   getEvaluationBatches,
   getEvaluationBatchById,
   runBatchEvaluation,
+  compareEvaluationBatches
   
 } from "../controllers/evaluationController.js";
 
@@ -16,5 +17,6 @@ router.get("/", protect, getEvaluations);
 router.get("/batches",protect,getEvaluationBatches);
 router.get("/batches/:id",protect, getEvaluationBatchById );
 router.post("/batch",protect,runBatchEvaluation);
+router.post("/compare",protect,compareEvaluationBatches);
 
 export default router;

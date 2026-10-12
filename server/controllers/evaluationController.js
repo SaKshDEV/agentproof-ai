@@ -68,10 +68,7 @@ export const getEvaluationBatches = async (
   }
 };
 
-export const getEvaluationBatchById = async (
-  req,
-  res
-) => {
+export const getEvaluationBatchById = async (req, res) => {
   try {
     const batch = await EvaluationBatch.findOne({
       _id: req.params.id,
@@ -114,6 +111,427 @@ export const getEvaluationBatchById = async (
     return res.status(500).json({
       message:
         "Failed to load evaluation batch",
+    });
+  }
+};
+
+export const compareEvaluationBatches = async (req, res) => {
+  try {
+    const {
+      baselineBatchId,
+      currentBatchId,
+    } = req.body;
+
+    if (
+      !baselineBatchId ||
+      !currentBatchId
+    ) {
+      return res.status(400).json({
+        message: "Baseline batch and current batch are required"
+      });
+    }
+    if (
+      baselineBatchId ===
+      currentBatchId
+    ) {
+      return res.status(400).json({
+        message:
+          "Choose two different batches to compare",
+      });
+    }
+
+
+    const baselineBatch =
+      await EvaluationBatch.findOne({
+        _id: baselineBatchId,
+        user: req.user._id,
+      })
+        .populate(
+          "agent",
+          "name method endpointUrl"
+        )
+        .populate(
+          "dataset",
+          "name description"
+        );
+
+
+    const currentBatch =
+      await EvaluationBatch.findOne({
+        _id: currentBatchId,
+        user: req.user._id,
+      })
+        .populate(
+          "agent",
+          "name method endpointUrl"
+        )
+        .populate(
+          "dataset",
+          "name description"
+        );
+
+
+    if (
+      !baselineBatch ||
+      !currentBatch
+    ) {
+      return res.status(404).json({
+        message:
+          "One or both evaluation batches were not found",
+      });
+    }
+    if (
+      !baselineBatch.dataset ||
+      !currentBatch.dataset
+    ) {
+      return res.status(400).json({
+        message:
+          "One or both datasets are no longer available",
+      });
+    }
+
+
+    if (
+      baselineBatch.dataset._id.toString() !==
+      currentBatch.dataset._id.toString()
+    ) {
+      return res.status(400).json({
+        message:
+          "Only batches using the same dataset can be compared",
+      });
+    }
+
+
+    const baselineRuns =
+      await EvaluationRun.find({
+        batch: baselineBatch._id,
+        user: req.user._id,
+      }).sort({
+        createdAt: 1,
+      });
+
+
+    const currentRuns =
+      await EvaluationRun.find({
+        batch: currentBatch._id,
+        user: req.user._id,
+      }).sort({
+        createdAt: 1,
+      });
+
+
+    const normalizeInput = (value) =>
+      String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+
+
+    const baselineByTestCaseId =
+      new Map();
+
+    const baselineByInput =
+      new Map();
+
+
+    for (const run of baselineRuns) {
+      if (run.testCaseId) {
+        baselineByTestCaseId.set(
+          run.testCaseId.toString(),
+          run
+        );
+      }
+
+      baselineByInput.set(
+        normalizeInput(run.input),
+        run
+      );
+    }
+
+
+    let regressions = 0;
+    let improvements = 0;
+    let unchanged = 0;
+    let notComparable = 0;
+
+    const testComparisons = [];
+
+
+    for (const currentRun of currentRuns) {
+      let baselineRun = null;
+
+
+      if (currentRun.testCaseId) {
+        baselineRun =
+          baselineByTestCaseId.get(
+            currentRun.testCaseId.toString()
+          );
+      }
+
+
+      if (!baselineRun) {
+        baselineRun =
+          baselineByInput.get(
+            normalizeInput(
+              currentRun.input
+            )
+          );
+      }
+
+
+      if (!baselineRun) {
+        notComparable += 1;
+
+        testComparisons.push({
+          input:
+            currentRun.input,
+
+          expectedOutput:
+            currentRun.expectedOutput,
+
+          change:
+            "not_comparable",
+
+          baseline: null,
+
+          current: {
+            success:
+              currentRun.success,
+
+            score:
+              currentRun.evaluation
+                ?.score ?? null,
+
+            passed:
+              currentRun.evaluation
+                ?.passed ?? null,
+
+            method:
+              currentRun.evaluation
+                ?.method || "none",
+
+            latency:
+              currentRun.latency,
+          },
+        });
+
+        continue;
+      }
+
+
+      const baselinePassed =
+        baselineRun.evaluation
+          ?.passed ?? null;
+
+      const currentPassed =
+        currentRun.evaluation
+          ?.passed ?? null;
+
+
+      let change =
+        "not_comparable";
+
+
+      if (
+        baselinePassed === true &&
+        currentPassed === false
+      ) {
+        change = "regression";
+        regressions += 1;
+
+      } else if (
+        baselinePassed === false &&
+        currentPassed === true
+      ) {
+        change = "improvement";
+        improvements += 1;
+
+      } else if (
+        baselinePassed !== null &&
+        currentPassed !== null &&
+        baselinePassed ===
+        currentPassed
+      ) {
+        change = "unchanged";
+        unchanged += 1;
+
+      } else {
+        notComparable += 1;
+      }
+
+
+      testComparisons.push({
+        input:
+          currentRun.input,
+
+        expectedOutput:
+          currentRun.expectedOutput,
+
+        change,
+
+        baseline: {
+          success:
+            baselineRun.success,
+
+          score:
+            baselineRun.evaluation
+              ?.score ?? null,
+
+          passed:
+            baselinePassed,
+
+          method:
+            baselineRun.evaluation
+              ?.method || "none",
+
+          latency:
+            baselineRun.latency,
+        },
+
+        current: {
+          success:
+            currentRun.success,
+
+          score:
+            currentRun.evaluation
+              ?.score ?? null,
+
+          passed:
+            currentPassed,
+
+          method:
+            currentRun.evaluation
+              ?.method || "none",
+
+          latency:
+            currentRun.latency,
+        },
+      });
+    }
+
+
+    const calculateDelta = (
+      baselineValue,
+      currentValue
+    ) => {
+      if (
+        baselineValue == null ||
+        currentValue == null
+      ) {
+        return null;
+      }
+
+      return Number(
+        (
+          currentValue -
+          baselineValue
+        ).toFixed(2)
+      );
+    };
+
+
+    return res.status(200).json({
+      message:
+        "Evaluation batches compared successfully",
+
+      comparison: {
+        baseline: {
+          _id:
+            baselineBatch._id,
+
+          agent:
+            baselineBatch.agent,
+
+          dataset:
+            baselineBatch.dataset,
+
+          correctnessRate:
+            baselineBatch.correctnessRate,
+
+          averageScore:
+            baselineBatch.averageScore,
+
+          averageLatency:
+            baselineBatch.averageLatency,
+
+          successfulRuns:
+            baselineBatch.successfulRuns,
+
+          totalTests:
+            baselineBatch.totalTests,
+
+          createdAt:
+            baselineBatch.createdAt,
+        },
+
+        current: {
+          _id:
+            currentBatch._id,
+
+          agent:
+            currentBatch.agent,
+
+          dataset:
+            currentBatch.dataset,
+
+          correctnessRate:
+            currentBatch.correctnessRate,
+
+          averageScore:
+            currentBatch.averageScore,
+
+          averageLatency:
+            currentBatch.averageLatency,
+
+          successfulRuns:
+            currentBatch.successfulRuns,
+
+          totalTests:
+            currentBatch.totalTests,
+
+          createdAt:
+            currentBatch.createdAt,
+        },
+
+        deltas: {
+          correctnessRate:
+            calculateDelta(
+              baselineBatch.correctnessRate,
+              currentBatch.correctnessRate
+            ),
+
+          averageScore:
+            calculateDelta(
+              baselineBatch.averageScore,
+              currentBatch.averageScore
+            ),
+
+          averageLatency:
+            calculateDelta(
+              baselineBatch.averageLatency,
+              currentBatch.averageLatency
+            ),
+        },
+
+        regressions,
+        improvements,
+        unchanged,
+        notComparable,
+      },
+
+      tests:
+        testComparisons,
+    });
+
+  } catch (error) {
+    console.error(
+      "Compare evaluation batches error:",
+      error.message
+    );
+
+    return res.status(500).json({
+      message:
+        "Failed to compare evaluation batches",
     });
   }
 };
