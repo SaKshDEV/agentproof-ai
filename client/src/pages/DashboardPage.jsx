@@ -49,6 +49,10 @@ function DashboardPage() {
   const [evaluationRunError, setEvaluationRunError] = useState("");
   const [evaluationResult, setEvaluationResult] = useState(null);
 
+  const [batches, setBatches] = useState([]);
+  const [batchesLoading, setBatchesLoading] = useState(true);
+  const [batchesError, setBatchesError] = useState("")
+
   const storedUser = localStorage.getItem("user");
 
   const user = storedUser
@@ -104,9 +108,38 @@ function DashboardPage() {
 
   }
 
+  const fetchBatches = async () => {
+    try {
+      setBatchesLoading(true);
+      setBatchesError("");
+
+      const token = localStorage.getItem("token");
+
+      const response = await api.get(
+        "evaluations/batches",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+        }
+      );
+      setBatches(
+        response.data.batches || []
+      );
+    } catch (error) {
+      setBatchesError(
+        error.response?.data?.message ||
+        "Failed to load batch history"
+      );
+    } finally {
+      setBatchesLoading(false);
+    }
+  }
+
   useEffect(() => {
     fetchAgents();
     fetchEvaluations();
+    fetchBatches();
   }, []);
 
   const successfulRuns = evaluations.filter(
@@ -133,6 +166,50 @@ function DashboardPage() {
         ) / evaluations.length
       )
       : 0;
+  const scoredEvaluations =
+    evaluations.filter(
+      (evaluation) =>
+        evaluation.evaluation?.passed != null &&
+        evaluation.evaluation?.score != null
+    );
+
+  const passedCorrectness =
+    scoredEvaluations.filter(
+      (evaluation) =>
+        evaluation.evaluation.passed === true
+    ).length;
+
+  const correctnessRate =
+    scoredEvaluations.length > 0
+      ? Math.round(
+        (
+          passedCorrectness /
+          scoredEvaluations.length
+        ) * 100
+      )
+      : null;
+
+  const averageScore =
+    scoredEvaluations.length > 0
+      ? Math.round(
+        scoredEvaluations.reduce(
+          (total, evaluation) =>
+            total +
+            evaluation.evaluation.score,
+          0
+        ) /
+        scoredEvaluations.length
+      )
+      : null;
+
+  const recentBatches =
+    [...batches]
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt) -
+          new Date(a.createdAt)
+      )
+      .slice(0, 3);
 
   const recentEvaluations = [...evaluations]
     .sort(
@@ -422,12 +499,16 @@ function DashboardPage() {
 
 
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 
               <StatCard
                 icon={Bot}
                 label="Active Agents"
-                value={agentsLoading ? "..." : agents.length}
+                value={
+                  agentsLoading
+                    ? "..."
+                    : agents.length
+                }
                 detail={
                   agents.length === 1
                     ? "1 connected agent"
@@ -437,7 +518,7 @@ function DashboardPage() {
 
               <StatCard
                 icon={Activity}
-                label="Run Success Rate"
+                label="Execution Success Rate"
                 value={
                   evaluationsLoading
                     ? "..."
@@ -449,6 +530,40 @@ function DashboardPage() {
                     : evaluations.length === 0
                       ? "No evaluations yet"
                       : `${successfulRuns} of ${evaluations.length} runs succeeded`
+                }
+              />
+
+              <StatCard
+                icon={ShieldCheck}
+                label="Correctness Rate"
+                value={
+                  evaluationsLoading
+                    ? "..."
+                    : correctnessRate == null
+                      ? "N/A"
+                      : `${correctnessRate}%`
+                }
+                detail={
+                  scoredEvaluations.length === 0
+                    ? "No scored evaluations yet"
+                    : `${passedCorrectness} of ${scoredEvaluations.length} evaluated answers passed`
+                }
+              />
+
+              <StatCard
+                icon={FlaskConical}
+                label="Average Score"
+                value={
+                  evaluationsLoading
+                    ? "..."
+                    : averageScore == null
+                      ? "N/A"
+                      : `${averageScore}%`
+                }
+                detail={
+                  scoredEvaluations.length === 0
+                    ? "No scored evaluations yet"
+                    : `Across ${scoredEvaluations.length} scored evaluations`
                 }
               />
 
@@ -469,7 +584,7 @@ function DashboardPage() {
 
               <StatCard
                 icon={TriangleAlert}
-                label="Failed Tests"
+                label="Failed Executions"
                 value={
                   evaluationsLoading
                     ? "..."
@@ -479,8 +594,8 @@ function DashboardPage() {
                   evaluations.length === 0
                     ? "No evaluations yet"
                     : failedRuns === 1
-                      ? "1 failed run"
-                      : `${failedRuns} failed runs`
+                      ? "1 failed execution"
+                      : `${failedRuns} failed executions`
                 }
               />
 
@@ -505,39 +620,57 @@ function DashboardPage() {
                   </div>
 
                   <button
-                    onClick={() => navigate("/evaluations")}
-                    className="text-sm font-medium text-violet-400 hover:text-violet-300">
+                    type="button"
+                    onClick={() =>
+                      navigate("/evaluations")
+                    }
+                    className="text-sm font-medium text-violet-400 hover:text-violet-300"
+                  >
                     View all
                   </button>
 
                 </div>
 
+
                 <div>
+
                   {evaluationsLoading ? (
+
                     <div className="px-6 py-8 text-sm text-slate-500">
-                      Loading evaluation...
+                      Loading evaluations...
                     </div>
+
                   ) : recentEvaluations.length === 0 ? (
+
                     <div className="px-6 py-8 text-sm text-slate-500">
                       No evaluations yet.
                     </div>
+
                   ) : (
-                    recentEvaluations.map((evaluation) => (
-                      <EvaluationRow
-                        key={evaluation._id}
-                        name={
-                          evaluation.agent?.name ||
-                          "Deleted agent"
-                        }
-                        latency={evaluation.latency}
-                        success={evaluation.success}
-                        time={new Date(
-                          evaluation.createdAt
-                        ).toLocaleString()}
-                      />
-                    ))
-                  )
-                  }
+
+                    recentEvaluations.map(
+                      (evaluation) => (
+
+                        <EvaluationRow
+                          key={evaluation._id}
+                          name={
+                            evaluation.agent?.name ||
+                            "Deleted agent"
+                          }
+                          latency={
+                            evaluation.latency
+                          }
+                          success={
+                            evaluation.success
+                          }
+                          time={new Date(
+                            evaluation.createdAt
+                          ).toLocaleString()}
+                        />
+
+                      )
+                    )
+                  )}
 
                 </div>
 
@@ -545,30 +678,104 @@ function DashboardPage() {
 
 
 
-              <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+              <section className="rounded-2xl border border-white/10 bg-white/[0.03]">
 
-                <p className="text-sm font-medium text-violet-400">
-                  Quick start
-                </p>
+                <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
 
-                <h3 className="mt-3 text-xl font-semibold">
-                  Run your first real evaluation.
-                </h3>
+                  <div>
+                    <h3 className="font-semibold">
+                      Recent batch runs
+                    </h3>
 
-                <p className="mt-3 text-sm leading-6 text-slate-400">
-                  Connect an AI agent, create a test dataset and measure its reliability.
-                </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Latest dataset evaluations
+                    </p>
+                  </div>
 
-                <button
-                  onClick={() => setShowAddAgent(true)}
-                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-3 text-sm font-semibold text-violet-300 transition hover:bg-violet-500/15">
-                  <Plus size={17} />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate("/evaluations/batches")
+                    }
+                    className="text-sm font-medium text-violet-400 hover:text-violet-300"
+                  >
+                    View all
+                  </button>
 
-                  Add your first agent
-                </button>
+                </div>
+
+
+                <div>
+
+                  {batchesLoading ? (
+
+                    <div className="px-6 py-8 text-sm text-slate-500">
+                      Loading batch runs...
+                    </div>
+
+                  ) : batchesError ? (
+
+                    <div className="px-6 py-8 text-sm text-red-400">
+                      {batchesError}
+                    </div>
+
+                  ) : recentBatches.length === 0 ? (
+
+                    <div className="px-6 py-8 text-sm text-slate-500">
+                      No batch evaluations yet.
+                    </div>
+
+                  ) : (
+
+                    recentBatches.map((batch) => (
+
+                      <button
+                        type="button"
+                        key={batch._id}
+                        onClick={() =>
+                          navigate(
+                            `/evaluations/batches/${batch._id}`
+                          )
+                        }
+                        className="flex w-full items-center justify-between gap-4 border-b border-white/5 px-6 py-5 text-left transition last:border-none hover:bg-white/[0.02]"
+                      >
+
+                        <div className="min-w-0">
+
+                          <p className="truncate text-sm font-medium text-white">
+                            {batch.agent?.name ||
+                              "Unknown agent"}
+                          </p>
+
+                          <p className="mt-1 truncate text-xs text-slate-500">
+                            {batch.dataset?.name ||
+                              "Unknown dataset"}
+                          </p>
+
+                        </div>
+
+
+                        <div className="shrink-0 text-right">
+
+                          <p className="text-sm font-semibold text-white">
+                            {batch.correctnessRate == null
+                              ? "N/A"
+                              : `${batch.correctnessRate}%`}
+                          </p>
+
+                          <p className="mt-1 text-xs text-slate-500">
+                            correctness
+                          </p>
+
+                        </div>
+
+                      </button>
+                    ))
+                  )}
+
+                </div>
 
               </section>
-
             </div>
 
           </div>
@@ -934,7 +1141,9 @@ function EvaluationRow({
           : "bg-amber-500/10 text-amber-400"
           }`}
       >
-        {success ? "Passed" : "Failed"}
+        {success
+          ? "Execution passed"
+          : "Execution failed"}
       </span>
 
 
