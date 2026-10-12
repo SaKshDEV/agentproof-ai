@@ -10,6 +10,7 @@ import DatasetsPage from "./pages/DatasetsPage";
 import DatasetDetailPage from "./pages/DatasetDetailPage";
 import BatchHistoryPage from "./pages/BatchHistoryPage";
 import BatchDetailPage from "./pages/BatchDetailPage";
+import CompareRunsPage from "./pages/CompareRunsPage";
 
 function App() {
   return (
@@ -85,6 +86,14 @@ function App() {
         element={
           <ProtectedRoute>
             <DatasetDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/evaluations/compare"
+        element={
+          <ProtectedRoute>
+            <CompareRunsPage />
           </ProtectedRoute>
         }
       />

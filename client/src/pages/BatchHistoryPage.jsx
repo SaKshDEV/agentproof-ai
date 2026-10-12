@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import {
   ArrowLeft,
+  GitCompareArrows,
   Bot,
   Database,
   Clock3,
@@ -45,7 +46,7 @@ function BatchHistoryPage() {
     } catch (error) {
       setError(
         error.response?.data?.message ||
-          "Failed to load batch history"
+        "Failed to load batch history"
       );
 
     } finally {
@@ -111,19 +112,34 @@ function BatchHistoryPage() {
           </div>
 
 
-          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
+          <div className="flex flex-col gap-3 sm:items-end">
 
-            <History size={17} />
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/evaluations/compare")
+              }
+              className="flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-500"
+            >
+              <GitCompareArrows size={17} />
+              Compare runs
+            </button>
 
-            <span>
-              {batches.length}{" "}
-              {batches.length === 1
-                ? "batch"
-                : "batches"}
-            </span>
+
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
+
+              <History size={17} />
+
+              <span>
+                {batches.length}{" "}
+                {batches.length === 1
+                  ? "batch"
+                  : "batches"}
+              </span>
+
+            </div>
 
           </div>
-
         </div>
 
 
