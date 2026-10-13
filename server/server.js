@@ -18,17 +18,30 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/agents", agentRoutes);
-app.get("/", (req,res)=>{
+app.get("/", (req, res) => {
     res.send("Agentproof api is running");
 
 });
+
+app.post("/api/slow-agent", async (req, res) => {
+    const { input } = req.body;
+
+    await new Promise((resolve) =>
+        setTimeout(resolve, 15000)
+    );
+
+    res.json({
+        response: `Slow response for: ${input}`,
+    });
+});
+
 app.use("/api/mock-agent", mockAgentRoutes);
 app.use("/api/evaluations", evaluationRoutes);
 app.use("/api/datasets", datasetRoutes);
 
- const PORT= process.env.PORT || 5000;
- 
- app.listen(PORT, ()=>{
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
     console.log(`server running on port ${PORT}`);
- });
+});
 
