@@ -6,6 +6,9 @@ import {
   evaluateNormalizedExact,
   evaluateTokenSimilarity,
 } from "../services/evaluationService.js";
+import {
+  evaluateSemanticMeaning
+} from "../services/semanticEvaluationService.js";
 
 
 export const getEvaluations = async (req, res) => {
@@ -742,61 +745,104 @@ export const runBatchEvaluation = async (req, res) => {
             agentResponse
           );
 
-        evaluation =
-          exactEvaluation;
 
         if (
-          exactEvaluation.passed === false
+          exactEvaluation.passed === true ||
+          exactEvaluation.passed === null
         ) {
           evaluation =
-            evaluateTokenSimilarity(
-              testCase.expectedOutput || "",
-              agentResponse
-            );
-        }
+            exactEvaluation;
 
-      } catch (error) {
-        console.error(
-          "Evaluation engine error:",
-          error.message
-        );
-
-        evaluation = {
-          method: "none",
-          score: null,
-          passed: null,
-          reason:
-            "Evaluation engine could not evaluate this response.",
-        };
-      }
-
-
-      if (
-        evaluation.passed !== null &&
-        evaluation.score !== null
-      ) {
-        evaluatedTests += 1;
-
-        totalScore +=
-          evaluation.score;
-
-        if (evaluation.passed) {
-          passedEvaluations += 1;
         } else {
-          failedEvaluations += 1;
+          try {
+            evaluation =
+              await evaluateSemanticMeaning(
+                testCase.expectedOutput || "",
+                agentResponse
+              );
+
+          } catch (semanticError) {
+            console.error(
+              "Semantic evaluation failed:",
+              semanticError.message
+            );
+
+            evaluation =
+              evaluateTokenSimilarity(
+                testCase.expectedOutput || "",
+                agentResponse
+              );
+          }
         }
-      }
+
+        } catch (error) {
+          console.error(
+            "Evaluation engine error:",
+            error.message
+          );
+
+          evaluation = {
+            method: "none",
+            score: null,
+            passed: null,
+            reason:
+              "Evaluation engine could not evaluate this response.",
+          };
+        }
 
 
-      const evaluationRun =
-        await EvaluationRun.create({
-          user: req.user._id,
+        if (
+          evaluation.passed !== null &&
+          evaluation.score !== null
+        ) {
+          evaluatedTests += 1;
 
-          agent: agent._id,
+          totalScore +=
+            evaluation.score;
 
-          dataset: dataset._id,
+          if (evaluation.passed) {
+            passedEvaluations += 1;
+          } else {
+            failedEvaluations += 1;
+          }
+        }
 
-          batch: batch._id,
+
+        const evaluationRun =
+          await EvaluationRun.create({
+            user: req.user._id,
+
+            agent: agent._id,
+
+            dataset: dataset._id,
+
+            batch: batch._id,
+
+            testCaseId:
+              testCase._id,
+
+            input:
+              testCase.input,
+
+            expectedOutput:
+              testCase.expectedOutput || "",
+
+            output:
+              agentResponse,
+
+            latency,
+
+            success: true,
+
+            error: "",
+
+            evaluation,
+          });
+
+
+        results.push({
+          evaluationId:
+            evaluationRun._id,
 
           testCaseId:
             testCase._id,
@@ -818,158 +864,132 @@ export const runBatchEvaluation = async (req, res) => {
 
           evaluation,
         });
-
-
-      results.push({
-        evaluationId:
-          evaluationRun._id,
-
-        testCaseId:
-          testCase._id,
-
-        input:
-          testCase.input,
-
-        expectedOutput:
-          testCase.expectedOutput || "",
-
-        output:
-          agentResponse,
-
-        latency,
-
-        success: true,
-
-        error: "",
-
-        evaluation,
-      });
-    }
+      }
 
     const averageLatency =
-      dataset.testCases.length > 0
-        ? Math.round(
-          totalLatency /
-          dataset.testCases.length
-        )
-        : 0;
+        dataset.testCases.length > 0
+          ? Math.round(
+            totalLatency /
+            dataset.testCases.length
+          )
+          : 0;
 
-    const averageScore =
-      evaluatedTests > 0
-        ? Number(
-          (
-            totalScore / evaluatedTests
-          ).toFixed(2)
-        )
-        : null;
-    const correctnessRate =
-      evaluatedTests > 0
-        ? Number(
-          (
-            (passedEvaluations /
-              evaluatedTests) *
-            100
-          ).toFixed(2)
-        )
-        : null;
+      const averageScore =
+        evaluatedTests > 0
+          ? Number(
+            (
+              totalScore / evaluatedTests
+            ).toFixed(2)
+          )
+          : null;
+      const correctnessRate =
+        evaluatedTests > 0
+          ? Number(
+            (
+              (passedEvaluations /
+                evaluatedTests) *
+              100
+            ).toFixed(2)
+          )
+          : null;
 
-    batch.status = "completed";
+      batch.status = "completed";
 
-    batch.successfulRuns =
-      successfulRuns;
+      batch.successfulRuns =
+        successfulRuns;
 
-    batch.failedRuns =
-      failedRuns;
+      batch.failedRuns =
+        failedRuns;
 
-    batch.evaluatedTests =
-      evaluatedTests;
+      batch.evaluatedTests =
+        evaluatedTests;
 
-    batch.passedEvaluations =
-      passedEvaluations;
+      batch.passedEvaluations =
+        passedEvaluations;
 
-    batch.failedEvaluations =
-      failedEvaluations;
+      batch.failedEvaluations =
+        failedEvaluations;
 
-    batch.averageScore =
-      averageScore;
+      batch.averageScore =
+        averageScore;
 
-    batch.correctnessRate =
-      correctnessRate;
+      batch.correctnessRate =
+        correctnessRate;
 
-    batch.averageLatency =
-      averageLatency;
+      batch.averageLatency =
+        averageLatency;
 
-    batch.completedAt =
-      new Date();
+      batch.completedAt =
+        new Date();
 
-    await batch.save();
+      await batch.save();
 
-    return res.status(200).json({
-      message:
-        "Batch evaluation completed",
+      return res.status(200).json({
+        message:
+          "Batch evaluation completed",
 
-      batch: {
-        _id: batch._id,
+        batch: {
+          _id: batch._id,
 
-        agent: agent.name,
+          agent: agent.name,
 
-        dataset: dataset.name,
+          dataset: dataset.name,
 
-        totalTests:
-          dataset.testCases.length,
+          totalTests:
+            dataset.testCases.length,
 
-        successfulRuns,
+          successfulRuns,
 
-        failedRuns,
+          failedRuns,
 
-        evaluatedTests,
+          evaluatedTests,
 
-        passedEvaluations,
+          passedEvaluations,
 
-        failedEvaluations,
+          failedEvaluations,
 
-        averageScore,
+          averageScore,
 
-        correctnessRate,
+          correctnessRate,
 
-        averageLatency,
+          averageLatency,
 
-        status:
-          batch.status,
-      },
+          status:
+            batch.status,
+        },
 
-      results,
-    });
+        results,
+      });
 
-  } catch (error) {
-    console.error(
-      "Batch evaluation error:",
-      error.message
-    );
+    } catch (error) {
+      console.error(
+        "Batch evaluation error:",
+        error.message
+      );
 
-    if (batch) {
-      try {
-        batch.status = "failed";
+      if (batch) {
+        try {
+          batch.status = "failed";
 
-        batch.completedAt =
-          new Date();
+          batch.completedAt =
+            new Date();
 
-        await batch.save();
+          await batch.save();
 
-      } catch (batchError) {
-        console.error(
-          "Batch status update failed:",
-          batchError.message
-        );
+        } catch (batchError) {
+          console.error(
+            "Batch status update failed:",
+            batchError.message
+          );
+        }
       }
+
+      return res.status(500).json({
+        message:
+          "Batch evaluation failed",
+
+        error:
+          error.message,
+      });
     }
-
-    return res.status(500).json({
-      message:
-        "Batch evaluation failed",
-
-      error:
-        error.message,
-    });
-  }
-};
+  };
