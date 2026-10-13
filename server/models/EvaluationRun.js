@@ -86,6 +86,20 @@ const evaluationRunSchema = new mongoose.Schema(
     type: String,
     default: "",
   },
+  hallucinationRisk: {
+    type: Number,
+    default: null,
+    min: 0 ,
+    max: 100,
+  },
+  hallucinationDetected: {
+    type: Boolean,
+    default: null,
+  },
+  hallucinationReason: {
+    type: String,
+    default: ""
+  }
 },
   },
   {

@@ -1020,7 +1020,7 @@ function DatasetDetailPage() {
 
                             </div>
                             {result.evaluation && (
-                              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                                 <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
                                   <p className="text-xs text-slate-500">
                                     Correctness
@@ -1063,6 +1063,35 @@ function DatasetDetailPage() {
                                           ? "Semantic"
                                           : "None"}
                                   </p>
+                                </div>
+                                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+
+                                  <p className="text-xs text-slate-500">
+                                    Hallucination
+                                  </p>
+
+                                  <p
+                                    className={`mt-2 text-sm font-semibold ${result.evaluation.hallucinationDetected === true
+                                      ? "text-red-400"
+                                      : result.evaluation.hallucinationDetected === false
+                                        ? "text-emerald-400"
+                                        : "text-slate-400"
+                                      }`}
+                                  >
+                                    {result.evaluation.hallucinationDetected === true
+                                      ? "Detected"
+                                      : result.evaluation.hallucinationDetected === false
+                                        ? "Not detected"
+                                        : "Not evaluated"}
+                                  </p>
+
+                                  <p className="mt-1 text-xs text-slate-500">
+                                    Risk:{" "}
+                                    {result.evaluation.hallucinationRisk == null
+                                      ? "N/A"
+                                      : `${result.evaluation.hallucinationRisk}%`}
+                                  </p>
+
                                 </div>
                               </div>
                             )}
@@ -1149,6 +1178,26 @@ function DatasetDetailPage() {
                                     }`}
                                 >
                                   {result.evaluation.reason}
+                                </div>
+
+                              </div>
+                            )}
+                            {result.evaluation?.hallucinationReason && (
+                              <div className="mt-4">
+
+                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                  Hallucination analysis
+                                </p>
+
+                                <div
+                                  className={`mt-2 rounded-xl border p-4 text-sm leading-6 ${result.evaluation.hallucinationDetected === true
+                                      ? "border-red-500/20 bg-red-500/10 text-red-300"
+                                      : result.evaluation.hallucinationDetected === false
+                                        ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                                        : "border-white/10 bg-white/[0.03] text-slate-400"
+                                    }`}
+                                >
+                                  {result.evaluation.hallucinationReason}
                                 </div>
 
                               </div>
