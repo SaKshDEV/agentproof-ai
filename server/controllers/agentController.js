@@ -1,5 +1,20 @@
 import Agent from "../models/Agent.js";
 import EvaluationRun from "../models/EvaluationRun.js";
+import {
+  encryptCredential,
+  decryptCredential
+} from "../services/credentialEncryptionService.js";
+import {
+  validateAgentUrl,
+} from "../services/agentUrlSecurityService.js";
+
+const getSafeAgent = (agent) => {
+  const safeAgent = agent.toObject();
+
+  delete safeAgent.credential;
+
+  return safeAgent;
+}
 
 export const createAgent = async (req, res) => {
   try {
@@ -8,6 +23,9 @@ export const createAgent = async (req, res) => {
       description,
       endpointUrl,
       method,
+      authType = "none",
+      authHeaderName,
+      credentialValue,
     } = req.body;
 
     if (!name || !endpointUrl) {
@@ -15,18 +33,69 @@ export const createAgent = async (req, res) => {
         message: "Agent name and endpoint URL are required",
       });
     }
+    const allowedAuthTypes = [
+      "none",
+      "bearer",
+      "api_key"
+    ];
+    if (!allowedAuthTypes.includes(authType)) {
+      return res.status(400).json({
+        message: "Invalid authentication type",
+      });
+    }
+
+    if (
+      authType !== "none" &&
+      !credentialValue
+    ) {
+      return res.status(400).json({
+        message:
+          "Credential is required for authenticated agents",
+      });
+    }
+
+    if (
+      authType === "api_key" &&
+      !authHeaderName?.trim()
+    ) {
+      return res.status(400).json({
+        message:
+          "Header name is required for API key authentication",
+      });
+    }
+    const encryptedCredential =
+      authType === "none"
+        ? null
+        : encryptCredential(
+          credentialValue
+        );
 
     const agent = await Agent.create({
       name,
       description,
       endpointUrl,
       method,
+
+      authType,
+
+      authHeaderName:
+        authType === "bearer"
+          ? "Authorization"
+          : authType === "api_key"
+            ? authHeaderName.trim()
+            : "Authorization",
+
+      credential:
+        encryptedCredential,
+
+      credentialConfigured:
+        authType !== "none",
       user: req.user._id,
     });
 
     return res.status(201).json({
       message: "Agent created successfully",
-      agent,
+      agent: getSafeAgent(agent),
     });
 
   } catch (error) {
@@ -92,8 +161,12 @@ export const updateAgent = async (req, res) => {
       name,
       description,
       endpointUrl,
-      method
+      method,
+      authType,
+      authHeaderName,
+      credentialValue,
     } = req.body;
+
     const agent = await Agent.findOne({
       _id: req.params.id,
       user: req.user._id,
@@ -116,11 +189,68 @@ export const updateAgent = async (req, res) => {
     if (method !== undefined) {
       agent.method = method;
     }
+    if (
+      authType !== undefined &&
+      ![
+        "none",
+        "bearer",
+        "api_key",
+      ].includes(authType)
+    ) {
+      return res.status(400).json({
+        message:
+          "Invalid authentication type"
+      })
+    }
+    const nextAuthType =
+      authType ?? agent.authType;
+
+    if (nextAuthType === "none") {
+      agent.authType = "none";
+
+      agent.authHeaderName = "Authorization";
+
+      agent.credential = null;
+
+      agent.credentialConfigured = false;
+    } else {
+      agent.authType = nextAuthType;
+
+      if (nextAuthType === "bearer") {
+        agent.authHeaderName = "Authorization";
+      }
+      if (nextAuthType === "api_key") {
+        const nextHeaderName = authHeaderName ?? agent.authHeaderName
+        if (!nextHeaderName?.trim()) {
+          return res.status(400).json({
+            message:
+              "Header name is required for API key authentication",
+          });
+        }
+
+        agent.authHeaderName = nextHeaderName.trim();
+      }
+
+      if (credentialValue) {
+        agent.credential =
+          encryptCredential(credentialValue);
+
+        agent.credentialConfigured = true;
+      }
+
+      if (!agent.credentialConfigured) {
+        return res.status(400).json({
+          message:
+            "Credential is required for authenticated agents",
+        });
+      }
+    }
+
     await agent.save();
 
     return res.status(200).json({
-      message: " Agent updated successfully",
-      agent,
+      message: "Agent updated successfully",
+      agent: getSafeAgent(agent),
     });
 
   } catch (error) {
@@ -150,27 +280,78 @@ export const testAgent = async (req, res) => {
     agent = await Agent.findOne({
       _id: req.params.id,
       user: req.user._id,
-    });
+    }).select("+credential");
 
     if (!agent) {
       return res.status(404).json({
         message: "Agent not found",
       });
     }
+    let validatedAgentUrl;
+
+    try {
+      validatedAgentUrl =
+        validateAgentUrl(agent.endpointUrl);
+    } catch (urlError) {
+      return res.status(400).json({
+        message: urlError.message,
+      });
+    }
+
+    const requestHeaders = {
+      "Content-Type": "application/json"
+    };
+
+    if (agent.authType !== "none") {
+      if (
+        !agent.credentialConfigured ||
+        !agent.credential
+      ) {
+        return res.status(400).json({
+          message:
+            "Agent credential is not configured",
+        });
+      }
+      const credential =
+        decryptCredential(
+          agent.credential
+        );
+
+      if (!credential) {
+        return res.status(400).json({
+          message:
+            "Agent credential could not be loaded",
+        });
+      }
+
+      if (agent.authType === "bearer") {
+        requestHeaders.Authorization =
+          `Bearer ${credential}`;
+      }
+
+      if (agent.authType === "api_key") {
+        requestHeaders[
+          agent.authHeaderName
+        ] = credential;
+      }
+    }
+
 
     startTime = Date.now();
 
     let agentResponse;
 
-    if (agent.method === "POST") {
-      const response = await fetch(agent.endpointUrl, {
+    if (agent.method === "POST")
+       {
+      const response = await fetch(validatedAgentUrl, 
+        {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: requestHeaders,
         body: JSON.stringify({
           input,
         }),
+        signal:
+        AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {
@@ -182,11 +363,18 @@ export const testAgent = async (req, res) => {
       agentResponse = await response.json();
 
     } else {
-      const url = new URL(agent.endpointUrl);
+      const url = new URL(validatedAgentUrl);
 
       url.searchParams.set("input", input);
 
-      const response = await fetch(url);
+      const response = await fetch(
+        url,
+        {
+          headers:requestHeaders,
+
+          signal: AbortSignal.timeout(10000)
+        }
+      );
 
       if (!response.ok) {
         throw new Error(

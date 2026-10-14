@@ -11,7 +11,10 @@ import {
 } from "../services/semanticEvaluationService.js";
 import {
   validateAgentUrl
-} from "../services/agentUrlSecurityService.js"
+} from "../services/agentUrlSecurityService.js";
+import {
+  decryptCredential,
+} from "../services/credentialEncryptionService.js";
 
 
 export const getEvaluations = async (req, res) => {
@@ -557,12 +560,63 @@ export const runBatchEvaluation = async (req, res) => {
     const agent = await Agent.findOne({
       _id: agentId,
       user: req.user._id,
-    });
+    }).select("+credential");
 
     if (!agent) {
       return res.status(404).json({
         message: "Agent not found",
       });
+    }
+    let validatedAgentUrl;
+
+    try {
+      validatedAgentUrl =
+        validateAgentUrl(
+          agent.endpointUrl
+        );
+    } catch (urlError) {
+      return res.status(400).json({
+        message: urlError.message,
+      });
+    }
+
+    const requestHeaders = {
+      "Content-Type": "application/json",
+    };
+
+    if (agent.authType !== "none") {
+      if (
+        !agent.credentialConfigured ||
+        !agent.credential
+      ) {
+        return res.status(400).json({
+          message:
+            "Agent credential is not configured",
+        });
+      }
+
+      const credential =
+        decryptCredential(
+          agent.credential
+        );
+
+      if (!credential) {
+        return res.status(400).json({
+          message:
+            "Agent credential could not be loaded",
+        });
+      }
+
+      if (agent.authType === "bearer") {
+        requestHeaders.Authorization =
+          `Bearer ${credential}`;
+      }
+
+      if (agent.authType === "api_key") {
+        requestHeaders[
+          agent.authHeaderName
+        ] = credential;
+      }
     }
 
     const dataset = await Dataset.findOne({
@@ -599,7 +653,6 @@ export const runBatchEvaluation = async (req, res) => {
     let totalScore = 0;
 
     const results = [];
-    const validatedAgentUrl = validateAgentUrl(agent.endpointUrl);
 
     for (const testCase of dataset.testCases) {
       const startTime = Date.now();
@@ -614,10 +667,7 @@ export const runBatchEvaluation = async (req, res) => {
             {
               method: "POST",
 
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
+              headers: requestHeaders,
 
               body: JSON.stringify({
                 input: testCase.input,
@@ -647,9 +697,10 @@ export const runBatchEvaluation = async (req, res) => {
           );
 
           const response =
-            await fetch(url,{
+            await fetch(url, {
+              headers: requestHeaders,
               signal:
-              AbortSignal.timeout(10000),
+                AbortSignal.timeout(10000),
             });
 
           if (!response.ok) {

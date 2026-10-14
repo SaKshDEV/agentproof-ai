@@ -23,17 +23,6 @@ app.get("/", (req, res) => {
 
 });
 
-app.post("/api/slow-agent", async (req, res) => {
-    const { input } = req.body;
-
-    await new Promise((resolve) =>
-        setTimeout(resolve, 15000)
-    );
-
-    res.json({
-        response: `Slow response for: ${input}`,
-    });
-});
 
 app.use("/api/mock-agent", mockAgentRoutes);
 app.use("/api/evaluations", evaluationRoutes);
