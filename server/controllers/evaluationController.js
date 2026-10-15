@@ -15,6 +15,9 @@ import {
 import {
   decryptCredential,
 } from "../services/credentialEncryptionService.js";
+import {
+  validateAuthHeaderName,
+} from "../services/agentAuthSecurityService.js";
 
 
 export const getEvaluations = async (req, res) => {
@@ -613,8 +616,21 @@ export const runBatchEvaluation = async (req, res) => {
       }
 
       if (agent.authType === "api_key") {
+        let safeHeaderName;
+
+        try {
+          safeHeaderName =
+            validateAuthHeaderName(
+              agent.authHeaderName
+            );
+        } catch (headerError) {
+          return res.status(400).json({
+            message: headerError.message,
+          });
+        }
+
         requestHeaders[
-          agent.authHeaderName
+          safeHeaderName
         ] = credential;
       }
     }

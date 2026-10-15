@@ -7,6 +7,9 @@ import {
 import {
   validateAgentUrl,
 } from "../services/agentUrlSecurityService.js";
+import {
+  validateAuthHeaderName,
+} from "../services/agentAuthSecurityService.js";
 
 const getSafeAgent = (agent) => {
   const safeAgent = agent.toObject();
@@ -46,7 +49,10 @@ export const createAgent = async (req, res) => {
 
     if (
       authType !== "none" &&
-      !credentialValue
+      (
+        typeof credentialValue !== "string" ||
+        !credentialValue.trim()
+      )
     ) {
       return res.status(400).json({
         message:
@@ -54,14 +60,20 @@ export const createAgent = async (req, res) => {
       });
     }
 
-    if (
-      authType === "api_key" &&
-      !authHeaderName?.trim()
-    ) {
-      return res.status(400).json({
-        message:
-          "Header name is required for API key authentication",
-      });
+    let validatedAuthHeaderName =
+      "Authorization";
+
+    if (authType === "api_key") {
+      try {
+        validatedAuthHeaderName =
+          validateAuthHeaderName(
+            authHeaderName
+          );
+      } catch (headerError) {
+        return res.status(400).json({
+          message: headerError.message,
+        });
+      }
     }
     const encryptedCredential =
       authType === "none"
@@ -79,11 +91,7 @@ export const createAgent = async (req, res) => {
       authType,
 
       authHeaderName:
-        authType === "bearer"
-          ? "Authorization"
-          : authType === "api_key"
-            ? authHeaderName.trim()
-            : "Authorization",
+        validatedAuthHeaderName,
 
       credential:
         encryptedCredential,
@@ -202,8 +210,25 @@ export const updateAgent = async (req, res) => {
           "Invalid authentication type"
       })
     }
+    const currentAuthType =
+      agent.authType || "none";
+
     const nextAuthType =
-      authType ?? agent.authType;
+      authType ?? currentAuthType;
+
+    if (
+      nextAuthType !== "none" &&
+      nextAuthType !== currentAuthType &&
+      (
+        typeof credentialValue !== "string" ||
+        !credentialValue.trim()
+      )
+    ) {
+      return res.status(400).json({
+        message:
+          "A new credential is required when changing authentication type",
+      });
+    }
 
     if (nextAuthType === "none") {
       agent.authType = "none";
@@ -220,18 +245,26 @@ export const updateAgent = async (req, res) => {
         agent.authHeaderName = "Authorization";
       }
       if (nextAuthType === "api_key") {
-        const nextHeaderName = authHeaderName ?? agent.authHeaderName
-        if (!nextHeaderName?.trim()) {
+        const nextHeaderName =
+          authHeaderName ??
+          agent.authHeaderName;
+
+        try {
+          agent.authHeaderName =
+            validateAuthHeaderName(
+              nextHeaderName
+            );
+        } catch (headerError) {
           return res.status(400).json({
-            message:
-              "Header name is required for API key authentication",
+            message: headerError.message,
           });
         }
-
-        agent.authHeaderName = nextHeaderName.trim();
       }
 
-      if (credentialValue) {
+      if (
+        typeof credentialValue === "string" &&
+        credentialValue.trim()
+      ) {
         agent.credential =
           encryptCredential(credentialValue);
 
@@ -330,8 +363,18 @@ export const testAgent = async (req, res) => {
       }
 
       if (agent.authType === "api_key") {
+        let safeHeaderName;
+        try {
+          safeHeaderName =
+            validateAuthHeaderName(agent.authHeaderName);
+        } catch (headerError) {
+          return res.status(400).json({
+            message: headerError.message,
+          });
+        }
+
         requestHeaders[
-          agent.authHeaderName
+          safeHeaderName
         ] = credential;
       }
     }
@@ -341,18 +384,17 @@ export const testAgent = async (req, res) => {
 
     let agentResponse;
 
-    if (agent.method === "POST")
-       {
-      const response = await fetch(validatedAgentUrl, 
+    if (agent.method === "POST") {
+      const response = await fetch(validatedAgentUrl,
         {
-        method: "POST",
-        headers: requestHeaders,
-        body: JSON.stringify({
-          input,
-        }),
-        signal:
-        AbortSignal.timeout(10000),
-      });
+          method: "POST",
+          headers: requestHeaders,
+          body: JSON.stringify({
+            input,
+          }),
+          signal:
+            AbortSignal.timeout(10000),
+        });
 
       if (!response.ok) {
         throw new Error(
@@ -370,7 +412,7 @@ export const testAgent = async (req, res) => {
       const response = await fetch(
         url,
         {
-          headers:requestHeaders,
+          headers: requestHeaders,
 
           signal: AbortSignal.timeout(10000)
         }
