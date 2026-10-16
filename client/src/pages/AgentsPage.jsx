@@ -13,7 +13,9 @@ import {
   Clock3
 } from "lucide-react";
 
+
 import api from "../services/api";
+import AgentCreateModal from "../components/AgentCreateModal";
 
 function AgentsPage() {
   const navigate = useNavigate();
@@ -23,18 +25,6 @@ function AgentsPage() {
   const [error, setError] = useState("");
 
   const [showAddAgent, setShowAddAgent] = useState(false);
-
-  const [agentName, setAgentName] = useState("");
-  const [agentDescription, setAgentDescription] = useState("");
-  const [endpointUrl, setEndpointUrl] = useState("");
-  const [method, setMethod] = useState("POST");
-  const [authType, setAuthType] = useState("none");
-  const [authHeaderName, setAuthHeaderName] = useState("x-api-key");
-  const [credentialValue, setCredentialValue] = useState("");
-
-
-  const [createLoading, setCreateLoading] = useState(false);
-  const [createError, setCreateError] = useState("");
 
   const [deletingId, setDeletingId] = useState(null);
 
@@ -86,91 +76,11 @@ function AgentsPage() {
       setLoading(false);
     }
   };
-  const createAgent = async (e) => {
-    e.preventDefault();
-
-    if (!agentName || !endpointUrl) {
-      setCreateError(
-        "Agent name and endpoint URL are required."
-      );
-      return;
-    }
-    if (
-      authType !== "none" &&
-      !credentialValue.trim()
-    ) {
-      setCreateError(
-        "Credential is required for authenticated agents."
-      );
-      return;
-    }
-
-    if (
-      authType === "api_key" &&
-      !authHeaderName.trim()
-    ) {
-      setCreateError(
-        "API key header name is required."
-      );
-      return;
-    }
-
-    try {
-      setCreateLoading(true);
-      setCreateError("");
-
-      const token = localStorage.getItem("token");
-
-      const response = await api.post(
-        "/agents",
-        {
-          name: agentName,
-          description: agentDescription,
-          endpointUrl,
-          method,
-          authType,
-
-          authHeaderName:
-            authType === "api_key"
-              ? authHeaderName
-              : undefined,
-
-          credentialValue:
-            authType !== "none"
-              ? credentialValue
-              : undefined,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setAgents((currentAgents) => [
-        response.data.agent,
-        ...currentAgents,
-      ]);
-
-      setAgentName("");
-      setAgentDescription("");
-      setEndpointUrl("");
-      setMethod("POST");
-      setAuthType("none");
-      setAuthHeaderName("x-api-key");
-      setCredentialValue("");
-
-      setShowAddAgent(false);
-
-    } catch (error) {
-      setCreateError(
-        error.response?.data?.message ||
-        "Failed to create agent"
-      );
-
-    } finally {
-      setCreateLoading(false);
-    }
+  const handleAgentCreated = (newAgent) => {
+    setAgents((currentAgents) => [
+      newAgent,
+      ...currentAgents,
+    ]);
   };
 
   const deleteAgent = async (agentId) => {
@@ -231,9 +141,13 @@ function AgentsPage() {
   const updateAgent = async (e) => {
     e.preventDefault();
 
-    if (!editName || !editEndpointUrl) {
+    if (
+      !editName.trim() ||
+      !editDescription.trim() ||
+      !editEndpointUrl.trim()
+    ) {
       setEditError(
-        "Agent name and endpoint URL are required."
+        "Agent name, description and endpoint URL are required."
       );
       return;
     }
@@ -544,233 +458,13 @@ function AgentsPage() {
       </div>
 
 
-      {showAddAgent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
-
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
-
-            <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
-
-              <div>
-                <h2 className="text-lg font-semibold">
-                  Add AI agent
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Connect an AI endpoint to AgentProof.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddAgent(false);
-                  setCreateError("");
-                  setAuthType("none");
-                  setAuthHeaderName("x-api-key");
-                  setCredentialValue("");
-                }}
-                className="rounded-lg p-2 text-slate-500 transition hover:bg-white/5 hover:text-white"
-              >
-                <X size={19} />
-              </button>
-
-            </div>
-
-
-            <form
-              onSubmit={createAgent}
-              className="space-y-5 p-6"
-            >
-
-              {createError && (
-                <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                  {createError}
-                </div>
-              )}
-
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
-                  Agent name
-                </label>
-
-                <input
-                  type="text"
-                  value={agentName}
-                  onChange={(e) => setAgentName(e.target.value)}
-                  placeholder="Customer Support Agent"
-                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-violet-500/60"
-                />
-              </div>
-
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
-                  Description
-                </label>
-
-                <textarea
-                  value={agentDescription}
-                  onChange={(e) =>
-                    setAgentDescription(e.target.value)
-                  }
-                  placeholder="Handles customer support questions..."
-                  rows="3"
-                  className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-violet-500/60"
-                />
-              </div>
-
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
-                  Endpoint URL
-                </label>
-
-                <input
-                  type="url"
-                  value={endpointUrl}
-                  onChange={(e) =>
-                    setEndpointUrl(e.target.value)
-                  }
-                  placeholder="https://api.example.com/chat"
-                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-violet-500/60"
-                />
-              </div>
-
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
-                  HTTP method
-                </label>
-
-                <select
-                  value={method}
-                  onChange={(e) => setMethod(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none"
-                >
-                  <option value="POST">POST</option>
-                  <option value="GET">GET</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
-                  Authentication
-                </label>
-
-                <select
-                  value={authType}
-                  onChange={(e) => {
-                    setAuthType(e.target.value);
-                    setCredentialValue("");
-                    setCreateError("");
-                  }}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none"
-                >
-                  <option value="none">
-                    No authentication
-                  </option>
-
-                  <option value="bearer">
-                    Bearer token
-                  </option>
-
-                  <option value="api_key">
-                    API key
-                  </option>
-                </select>
-
-                <p className="mt-2 text-xs text-slate-500">
-                  Credentials are encrypted before being stored.
-                </p>
-              </div>
-
-              {authType === "api_key" && (
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-300">
-                    API key header
-                  </label>
-
-                  <input
-                    type="text"
-                    value={authHeaderName}
-                    onChange={(e) =>
-                      setAuthHeaderName(e.target.value)
-                    }
-                    placeholder="x-api-key"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-violet-500/60"
-                  />
-
-                  <p className="mt-2 text-xs text-slate-500">
-                    Example: x-api-key, api-key or X-API-Key
-                  </p>
-                </div>
-              )}
-              {authType !== "none" && (
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-300">
-                    {authType === "bearer"
-                      ? "Bearer token"
-                      : "API key"}
-                  </label>
-
-                  <input
-                    type="password"
-                    value={credentialValue}
-                    onChange={(e) =>
-                      setCredentialValue(e.target.value)
-                    }
-                    placeholder={
-                      authType === "bearer"
-                        ? "Enter bearer token"
-                        : "Enter API key"
-                    }
-                    autoComplete="new-password"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-violet-500/60"
-                  />
-
-                  <p className="mt-2 text-xs text-slate-500">
-                    This secret is encrypted server-side and is never
-                    returned by the API.
-                  </p>
-                </div>
-              )}
-
-
-              <div className="flex gap-3 pt-2">
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddAgent(false);
-                    setCreateError("");
-                    setAuthType("none");
-                    setAuthHeaderName("x-api-key");
-                    setCredentialValue("");
-                  }}
-                  className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/5"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={createLoading}
-                  className="flex-1 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {createLoading
-                    ? "Adding agent..."
-                    : "Add agent"}
-                </button>
-
-              </div>
-
-            </form>
-
-          </div>
-
-        </div>
-      )}
+      <AgentCreateModal
+        isOpen={showAddAgent}
+        onClose={() =>
+          setShowAddAgent(false)
+        }
+        onCreated={handleAgentCreated}
+      />
       {editingAgent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
 
