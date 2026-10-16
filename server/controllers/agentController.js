@@ -31,9 +31,14 @@ export const createAgent = async (req, res) => {
       credentialValue,
     } = req.body;
 
-    if (!name || !endpointUrl) {
+    if (
+      !name?.trim() ||
+      !description?.trim() ||
+      !endpointUrl?.trim()
+    ) {
       return res.status(400).json({
-        message: "Agent name and endpoint URL are required",
+        message:
+          "Agent name, description and endpoint URL are required",
       });
     }
     const allowedAuthTypes = [
@@ -324,7 +329,7 @@ export const testAgent = async (req, res) => {
 
     try {
       validatedAgentUrl =
-        validateAgentUrl(agent.endpointUrl);
+        await validateAgentUrl(agent.endpointUrl);
     } catch (urlError) {
       return res.status(400).json({
         message: urlError.message,
@@ -388,6 +393,7 @@ export const testAgent = async (req, res) => {
       const response = await fetch(validatedAgentUrl,
         {
           method: "POST",
+          redirect: "manual",
           headers: requestHeaders,
           body: JSON.stringify({
             input,
@@ -412,8 +418,8 @@ export const testAgent = async (req, res) => {
       const response = await fetch(
         url,
         {
+          redirect: "manual",
           headers: requestHeaders,
-
           signal: AbortSignal.timeout(10000)
         }
       );

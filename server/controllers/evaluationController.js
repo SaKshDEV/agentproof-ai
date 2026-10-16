@@ -574,7 +574,7 @@ export const runBatchEvaluation = async (req, res) => {
 
     try {
       validatedAgentUrl =
-        validateAgentUrl(
+        await validateAgentUrl(
           agent.endpointUrl
         );
     } catch (urlError) {
@@ -682,7 +682,7 @@ export const runBatchEvaluation = async (req, res) => {
             validatedAgentUrl,
             {
               method: "POST",
-
+              redirect: "manual",
               headers: requestHeaders,
 
               body: JSON.stringify({
@@ -715,6 +715,7 @@ export const runBatchEvaluation = async (req, res) => {
           const response =
             await fetch(url, {
               headers: requestHeaders,
+              redirect: "manual",
               signal:
                 AbortSignal.timeout(10000),
             });
