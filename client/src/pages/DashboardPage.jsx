@@ -15,6 +15,7 @@ import {
   TriangleAlert,
   X,
   History,
+  Menu,
 } from "lucide-react";
 
 import api from "../services/api"
@@ -33,6 +34,7 @@ function DashboardPage() {
   const [evaluationsError, setEvaluationsError] = useState("")
 
   const [showAddAgent, setShowAddAgent] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const [showNewEvaluation, setShowNewEvaluation] = useState(false);
 
@@ -385,43 +387,174 @@ function DashboardPage() {
           </div>
 
         </aside>
+        {showMobileMenu && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+
+            <button
+              type="button"
+              onClick={() => setShowMobileMenu(false)}
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              aria-label="Close navigation"
+            />
+<aside className="relative z-10 flex h-full w-72 flex-col overflow-y-auto border-r border-white/10 bg-slate-950 shadow-2xl">
+            
+
+              <div className="flex h-20 items-center justify-between border-b border-white/10 px-5">
+
+                <div className="flex items-center">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600">
+                    <ShieldCheck size={19} />
+                  </div>
+
+                  <span className="ml-3 text-lg font-bold">
+                    AgentProof
+                    <span className="text-violet-400"> AI</span>
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-white"
+                  aria-label="Close navigation"
+                >
+                  <X size={20} />
+                </button>
+
+              </div>
+
+              <nav className="flex-1 space-y-2 px-4 py-6">
+
+                <SidebarItem
+                  icon={LayoutDashboard}
+                  label="Overview"
+                  active
+                  onClick={() => setShowMobileMenu(false)}
+                />
+
+                <SidebarItem
+                  icon={Bot}
+                  label="Agents"
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    navigate("/agents");
+                  }}
+                />
+
+                <SidebarItem
+                  icon={FlaskConical}
+                  label="Evaluations"
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    navigate("/evaluations");
+                  }}
+                />
+
+                <SidebarItem
+                  icon={History}
+                  label="Batch History"
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    navigate("/evaluations/batches");
+                  }}
+                />
+
+                <SidebarItem
+                  icon={Database}
+                  label="Datasets"
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    navigate("/datasets");
+                  }}
+                />
+
+                <SidebarItem
+                  icon={Settings}
+                  label="Settings"
+                />
+
+              </nav>
+
+              <div className="border-t border-white/10 p-4">
+
+                <div className="mb-3 rounded-xl bg-white/[0.03] p-3">
+                  <p className="truncate text-sm font-medium text-white">
+                    {user?.name || "AgentProof User"}
+                  </p>
+
+                  <p className="mt-1 truncate text-xs text-slate-500">
+                    {user?.email || "user@example.com"}
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
+                >
+                  <LogOut size={17} />
+                  Logout
+                </button>
+
+              </div>
+
+            </aside>
+
+          </div>
+        )}
 
 
 
         <main className="min-w-0 flex-1">
 
 
-          <header className="flex h-20 items-center justify-between border-b border-white/10 px-6 lg:px-8">
+          <header className="flex h-20 items-center justify-between gap-3 border-b border-white/10 px-4 sm:px-6 lg:px-8">
 
-            <div>
-              <p className="text-sm text-slate-500">
-                Workspace
-              </p>
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowMobileMenu(true)}
+                className="flex shrink-0 rounded-xl border border-white/10 p-2.5 text-slate-300 lg:hidden"
+                aria-label="Open navigation"
+              >
+                <Menu size={20} />
+              </button>
 
-              <h1 className="mt-1 text-lg font-semibold">
-                Production AI
-              </h1>
+              <div className="min-w-0">
+                <p className="text-sm text-slate-500">
+                  Workspace
+                </p>
+
+                <h1 className="mt-1 truncate text-lg font-semibold">
+                  Production AI
+                </h1>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() =>
                   setShowAddAgent(true)
                 }
-                className="hidden items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:flex"
+                className="flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:px-4"
               >
                 <Bot size={17} />
-                Add agent
+
+                <span className="hidden sm:inline">
+                  Add agent
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={openNewEvaluation}
-                className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold transition hover:bg-violet-500"
+                className="flex shrink-0 items-center gap-2 rounded-xl bg-violet-600 px-3 py-2.5 text-sm font-semibold transition hover:bg-violet-500 sm:px-4"
               >
                 <Plus size={17} />
-                New evaluation
+
+                <span className="hidden sm:inline">
+                  New evaluation
+                </span>
               </button>
             </div>
           </header>
@@ -438,7 +571,7 @@ function DashboardPage() {
                   Overview
                 </p>
 
-                <h2 className="mt-2 text-3xl font-bold tracking-tight">
+                <h2 className="mt-2 break-words text-2xl font-bold tracking-tight sm:text-3xl">
                   Welcome back, {user?.name || "there"}.
                 </h2>
 
