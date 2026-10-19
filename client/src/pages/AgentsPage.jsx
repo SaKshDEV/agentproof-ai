@@ -295,7 +295,7 @@ function AgentsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 px-6 py-8 text-white">
+    <div className="min-h-screen overflow-x-hidden bg-slate-950 px-4 py-6 text-white sm:px-6 sm:py-8">
 
       <div className="mx-auto max-w-7xl">
 
@@ -373,7 +373,7 @@ function AgentsPage() {
 
               <div
                 key={agent._id}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-violet-500/30"
+                className="min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-violet-500/30 sm:p-6"
               >
 
                 <div className="flex items-start justify-between">
@@ -392,17 +392,20 @@ function AgentsPage() {
                   {agent.name}
                 </h2>
 
-                <p className="mt-2 min-h-10 text-sm leading-6 text-slate-500">
+                <p className="mt-2 min-h-10 break-words text-sm leading-6 text-slate-500">
                   {agent.description || "No description provided."}
                 </p>
 
 
                 <div className="mt-5 border-t border-white/10 pt-5">
 
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <Globe2 size={15} />
+                  <div className="flex min-w-0 items-center gap-2 text-sm text-slate-400">
+                    <Globe2
+                      size={15}
+                      className="shrink-0"
+                    />
 
-                    <span className="truncate">
+                    <span className="min-w-0 flex-1 truncate">
                       {agent.endpointUrl}
                     </span>
                   </div>
@@ -419,13 +422,13 @@ function AgentsPage() {
                     Test agent
                   </button>
 
-                  <div className="mt-5 flex gap-3">
+                  <div className="mt-5 grid grid-cols-2 gap-3">
 
 
 
                     <button
                       onClick={() => openEditModal(agent)}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/5"
+                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/5"
                     >
                       <Pencil size={15} />
                       Edit
@@ -434,7 +437,7 @@ function AgentsPage() {
                     <button
                       onClick={() => deleteAgent(agent._id)}
                       disabled={deletingId === agent._id}
-                      className="flex items-center justify-center gap-2 rounded-lg border border-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex  w-full items-center justify-center gap-2 rounded-lg border border-red-500/20 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Trash2 size={15} />
 
@@ -700,7 +703,7 @@ function AgentsPage() {
       {testingAgent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
 
-          <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
 
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
 
