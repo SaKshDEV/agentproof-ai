@@ -182,6 +182,75 @@ Connect external AI agents while keeping their authentication credentials protec
 
 <div align="center">
 
+## 📸 Product Preview
+
+<p>
+  Explore AgentProof AI's dashboard, evaluation history, and regression testing workflow.
+</p>
+
+</div>
+
+<br/>
+
+### 📊 Reliability Dashboard
+
+<p align="center">
+  <img
+    src="docs/screenshots/dashboard.png"
+    alt="AgentProof AI Reliability Dashboard"
+    width="100%"
+  />
+</p>
+
+<br/>
+
+<table>
+<tr>
+
+<td width="50%" valign="top">
+
+### 🧪 Batch Evaluation History
+
+<img
+  src="docs/screenshots/batch-history.png"
+  alt="AgentProof AI Batch Evaluation History"
+  width="100%"
+/>
+
+</td>
+
+<td width="50%" valign="top">
+
+### 🔄 Regression Comparison
+
+<img
+  src="docs/screenshots/compare-runs.png"
+  alt="AgentProof AI Regression Comparison"
+  width="100%"
+/>
+
+</td>
+
+</tr>
+</table>
+
+<br/>
+
+<div align="center">
+
+<a href="https://agentproof-ai.vercel.app/">
+  <img
+    src="https://img.shields.io/badge/Explore_Live_Product-7C3AED?style=for-the-badge&logo=vercel&logoColor=white"
+    alt="Explore AgentProof AI"
+  />
+</a>
+
+</div>
+
+---
+
+<div align="center">
+
 ## 🏗️ System Architecture
 
 <p>
@@ -895,6 +964,7 @@ Surface potentially unreliable responses.
 
 </tr>
 </table>
+
 </div>
 
 ---
@@ -920,6 +990,12 @@ agentproof-ai/
 │   ├── routes/
 │   ├── services/
 │   └── server.js
+│
+├── docs/
+│   └── screenshots/
+│       ├── dashboard.png
+│       ├── batch-history.png
+│       └── regression-comparison.png
 │
 ├── .gitignore
 └── README.md
