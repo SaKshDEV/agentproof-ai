@@ -41,7 +41,7 @@ const agentSchema = new mongoose.Schema({
 
     },
     method: {
-        type: "String",
+        type: String,
         enum: ["POST", "GET"],
         default: "POST",
     },
