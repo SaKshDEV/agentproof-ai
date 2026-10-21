@@ -356,6 +356,7 @@ function DashboardPage() {
             <SidebarItem
               icon={Settings}
               label="Settings"
+              onClick={() => navigate("/settings")}
             />
 
           </nav>
@@ -396,8 +397,8 @@ function DashboardPage() {
               className="absolute inset-0 bg-black/70 backdrop-blur-sm"
               aria-label="Close navigation"
             />
-<aside className="relative z-10 flex h-full w-72 flex-col overflow-y-auto border-r border-white/10 bg-slate-950 shadow-2xl">
-            
+            <aside className="relative z-10 flex h-full w-72 flex-col overflow-y-auto border-r border-white/10 bg-slate-950 shadow-2xl">
+
 
               <div className="flex h-20 items-center justify-between border-b border-white/10 px-5">
 
@@ -471,6 +472,10 @@ function DashboardPage() {
                 <SidebarItem
                   icon={Settings}
                   label="Settings"
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    navigate("/settings");
+                  }}
                 />
 
               </nav>

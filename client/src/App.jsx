@@ -11,6 +11,7 @@ import DatasetDetailPage from "./pages/DatasetDetailPage";
 import BatchHistoryPage from "./pages/BatchHistoryPage";
 import BatchDetailPage from "./pages/BatchDetailPage";
 import CompareRunsPage from "./pages/CompareRunsPage";
+import SettingsPage from "./pages/SettingsPage";
 
 function App() {
   return (
@@ -94,6 +95,14 @@ function App() {
         element={
           <ProtectedRoute>
             <CompareRunsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         }
       />
